@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WebGPUProvider } from "./contexts/WebGPUContext";
+import { LLMProvider } from "./contexts/LLMContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WebGPUProvider>{children}</WebGPUProvider>
+        <WebGPUProvider>
+          <LLMProvider>
+            {children}
+          </LLMProvider>
+        </WebGPUProvider>
       </body>
     </html>
   );

@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
-  CreateMLCEngine, 
-  InitProgressReport, 
   ChatCompletionSystemMessageParam,
   ChatCompletionUserMessageParam
 } from "@mlc-ai/web-llm";
@@ -15,6 +13,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
 } from 'reactflow';
+import { useLLM } from '../contexts/LLMContext';
 import 'reactflow/dist/style.css';
 
 type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise';
@@ -61,38 +60,11 @@ const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
   },
 ];
 
-let engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>> | null = null;
-
-const initEngine = async (setLoading: (loading: boolean) => void, setError: (error: string | null) => void) => {
-  if (engineInstance) return engineInstance;
-  
+const generateResponse = async (
+  engineInstance: NonNullable<ReturnType<typeof useLLM>['engineInstance']>,
+  prompt: string
+) => {
   try {
-    setLoading(true);
-    engineInstance = await CreateMLCEngine(
-      // "Phi-3.5-mini-instruct-q4f16_1-MLC", // good but terribly slow download
-      // "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC-1k", // not good
-      "Llama-3.2-1B-Instruct-q4f32_1-MLC",
-      // "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", // not good
-      { 
-        initProgressCallback: (report: InitProgressReport) => {
-          console.log('Model loading:', report);
-        }
-      }
-    );
-    return engineInstance;
-  } catch (error) {
-    console.error('Failed to initialize WebLLM:', error);
-    setError('Failed to initialize the model. Please make sure WebGPU is supported in your browser.');
-    throw error;
-  } finally {
-    setLoading(false);
-  }
-};
-
-const generateResponse = async (prompt: string, setLoading: (loading: boolean) => void, setError: (error: string | null) => void) => {
-  try {
-    const engine = await initEngine(setLoading, setError);
-
     // Format the prompt as a chat message
     const messages: (ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam)[] = [
       { role: "system", content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting." },
@@ -100,7 +72,7 @@ const generateResponse = async (prompt: string, setLoading: (loading: boolean) =
     ];
 
     // Generate response
-    const response = await engine.chat.completions.create({
+    const response = await engineInstance.chat.completions.create({
       messages,
       temperature: 0.7,
       max_tokens: 100
@@ -114,7 +86,8 @@ const generateResponse = async (prompt: string, setLoading: (loading: boolean) =
   }
 };
 
-export default function LLMComponent() {
+export default function WikipediaGameBoard() {
+  const { engineInstance } = useLLM();
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([{
     id: '0',
     type: 'default',
@@ -157,7 +130,7 @@ export default function LLMComponent() {
   };
 
   const handleAction = async (actionType: ActionType) => {
-    if (!selectedNode) return;
+    if (!selectedNode || !engineInstance) return;
 
     try {
       setLoading(true);
@@ -171,37 +144,38 @@ export default function LLMComponent() {
       const prompt = action.prompt.replace('{topic}', selectedNode.data.label).replaceAll('{n}', maxTopics.toString());
       console.log('Sending prompt:', prompt);
       
-      const result = await generateResponse(prompt, setLoading, setError);
-      console.log('Raw LLM result:', result);
-      
-      const topics = parseResponse(result, maxTopics);
-      console.log('Extracted topics:', topics);
-      
-      if (!topics.length) {
-        throw new Error('No topics found in response');
+      try {
+        const result = await generateResponse(engineInstance, prompt);
+        console.log('Raw LLM result:', result);
+        
+        const topics = parseResponse(result, maxTopics);
+        console.log('Extracted topics:', topics);
+        
+        if (!topics.length) {
+          throw new Error('No topics found in response');
+        }
+
+        // Create new nodes and edges
+        const newNodes: Node[] = topics.map((topic, index) => ({
+          id: `${selectedNode.id}-${actionType}-${index}`,
+          data: { label: topic },
+          position: {
+            x: (selectedNode.position.x || 0) + Math.cos(index * (2 * Math.PI / topics.length)) * 200,
+            y: (selectedNode.position.y || 0) + Math.sin(index * (2 * Math.PI / topics.length)) * 200,
+          },
+        }));
+
+        const newEdges: Edge[] = newNodes.map(node => ({
+          id: `e-${selectedNode.id}-${node.id}`,
+          source: selectedNode.id,
+          target: node.id,
+        }));
+
+        setNodes(nodes => [...nodes, ...newNodes]);
+        setEdges(edges => [...edges, ...newEdges]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to generate response');
       }
-
-      // Create new nodes and edges
-      const newNodes: Node[] = topics.map((topic, index) => ({
-        id: `${selectedNode.id}-${actionType}-${index}`,
-        data: { label: topic },
-        position: {
-          x: (selectedNode.position.x || 0) + Math.cos(index * (2 * Math.PI / topics.length)) * 200,
-          y: (selectedNode.position.y || 0) + Math.sin(index * (2 * Math.PI / topics.length)) * 200,
-        },
-      }));
-
-      const newEdges: Edge[] = newNodes.map(node => ({
-        id: `e-${selectedNode.id}-${node.id}`,
-        source: selectedNode.id,
-        target: node.id,
-      }));
-
-      setNodes(nodes => [...nodes, ...newNodes]);
-      setEdges(edges => [...edges, ...newEdges]);
-    } catch (err) {
-      console.error('Action error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
       setSelectedNode(null);

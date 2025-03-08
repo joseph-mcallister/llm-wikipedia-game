@@ -19,7 +19,7 @@ export default function WebGPUStatus() {
         in your browser
         {!isSupported && (
           <>
-            <br />
+            {' - '}
             <a 
               href="https://docs.swmansion.com/TypeGPU/blog/troubleshooting/"
               className="text-blue-600 hover:underline"

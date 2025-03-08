@@ -17,6 +17,19 @@ export default function WebGPUStatus() {
           {isSupported ? 'supported' : 'not supported'}
         </span>{' '}
         in your browser
+        {!isSupported && (
+          <>
+            <br />
+            <a 
+              href="https://docs.swmansion.com/TypeGPU/blog/troubleshooting/"
+              className="text-blue-600 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Enable WebGPU in your browser
+            </a>
+          </>
+        )}
       </p>
     </div>
   );

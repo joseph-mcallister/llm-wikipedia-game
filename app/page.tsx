@@ -1,4 +1,5 @@
 import WebGPUStatus from "./components/WebGPUStatus";
+import LLMComponent from "./components/LLMComponent";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
             <li>Repeat until the LLM outputs your target wikipedia page</li>
           </ol>
         </div>
+        <LLMComponent />
       </main>
     </div>
   );

@@ -334,11 +334,11 @@ export default function WikipediaGameBoard() {
       <div className="top-0 left-0 right-0 text-center z-50 mb-8">
         <p className="text-2xl text-white mb-8">
           {hasWon ? (
-            <>🎉 Congratulations! You found a path from <span className="font-bold">{START_WORD}</span> to <span className="font-bold">{TARGET_WORD}</span>! 🎉</>
+            <>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{START_WORD}</span> to <span className="font-bold text-pink-400">{TARGET_WORD}</span>! 🎉</>
           ) : (
             <>
-              Find a path from <span className="font-bold">{START_WORD}</span> to{" "}
-              <span className="font-bold">{TARGET_WORD}</span>
+              Find a path from <span className="font-bold text-cyan-400">{START_WORD}</span> to{" "}
+              <span className="font-bold text-pink-400">{TARGET_WORD}</span>
             </>
           )}
         </p>

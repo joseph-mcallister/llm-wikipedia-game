@@ -4,6 +4,9 @@ import {
   CreateMLCEngine,
 } from "@mlc-ai/web-llm";
 
+import { Wllama } from '@wllama/wllama/esm/index.js';
+import WasmFromCDN from '@wllama/wllama/esm/wasm-from-cdn.js';
+
 interface Model {
   id: string;
   name: string;
@@ -25,6 +28,36 @@ export const MODELS: Model[] = [
     type: "mlc",
   },
 ];
+
+
+export const generateResponseWithWllama = async (prompt: string) => {
+    const wllamaInstance = new Wllama(WasmFromCDN);
+    // Define a function for tracking the model download progress
+    const progressCallback =  ({ loaded, total }: { loaded: number, total: number }) => {
+      // Calculate the progress as a percentage
+      const progressPercentage = Math.round((loaded / total) * 100);
+      // Log the progress in a user-friendly format
+      console.log(`Downloading... ${progressPercentage}%`);
+    };
+    // Load GGUF from Hugging Face hub
+    // (alternatively, you can use loadModelFromUrl if the model is not from HF hub)
+    await wllamaInstance.loadModelFromHF(
+      'ggml-org/models',
+      'tinyllamas/stories260K.gguf',
+      {
+        progressCallback,
+      }
+    );
+    const outputText = await wllamaInstance.createCompletion("hey are you there", {
+      nPredict: 50,
+      sampling: {
+        temp: 0.5,
+        top_k: 40,
+        top_p: 0.9,
+      },
+    });
+  console.log(outputText);
+}
 
 // export const generateResponseWithWasm = async (prompt: string, pipe: (prompt: any, options: any) => TextGenerationPipeline) => {
 //   const messages = [
@@ -52,6 +85,7 @@ export const generateResponseWithMLC = async (
   prompt: string
 ) => {
   try {
+    await generateResponseWithWllama(prompt);
     const messages: (
       | ChatCompletionSystemMessageParam
       | ChatCompletionUserMessageParam

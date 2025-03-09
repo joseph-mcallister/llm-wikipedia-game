@@ -11,6 +11,7 @@
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.78",
     "@next/third-parties": "^15.2.1",
+    "@wllama/wllama": "^2.2.1",
     "next": "^15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const DEFAULT_WORDS = ['USA', 'Elon Musk'];
 
@@ -22,9 +23,20 @@ interface GameWordsContextType {
 const GameWordsContext = createContext<GameWordsContextType | null>(null);
 
 export function GameWordsProvider({ children }: { children: React.ReactNode }) {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const [startWord, endWord] = DAILY_WORDS[today] || DEFAULT_WORDS;
+  const searchParams = useSearchParams();
+  const startParam = searchParams.get('start');
+  const endParam = searchParams.get('end');
+
+  let startWord: string;
+  let endWord: string;
+
+  if (startParam && endParam) {
+    startWord = startParam;
+    endWord = endParam;
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    [startWord, endWord] = DAILY_WORDS[today] || DEFAULT_WORDS;
+  }
 
   return (
     <GameWordsContext.Provider value={{ startWord, endWord }}>
@@ -39,4 +51,4 @@ export function useGameWords() {
     throw new Error('useGameWords must be used within a GameWordsProvider');
   }
   return context;
-} 
+}

@@ -21,7 +21,7 @@ export const MODELS: Model[] = [
   },
   {
     id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-    name: "Qwen-2.5-0.5B ",
+    name: "Qwen-2.5-0.5B (small",
     downloadSize: "250 MB",
     type: "mlc",
   },
@@ -33,9 +33,15 @@ export const MODELS: Model[] = [
   },
   {
     id: "onnx-community/Llama-3.2-1B-Instruct",
-    name: "Llama-3.2-1B (wasm)",
+    name: "Llama-3.2-1B (best wasm)",
     downloadSize: "650 MB",
     type: "transformers.js",
+  },
+  {
+    "id": "onnx-community/Qwen2-VL-2B-Instruct",
+    "name": "Qwen-2-VL-2B (best wasm)",
+    "downloadSize": "650 MB",
+    "type": "transformers.js"
   }
 ];
 

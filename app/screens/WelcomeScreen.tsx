@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWebGPU } from "../contexts/WebGPUContext";
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from "../contexts/LLMContext";
@@ -20,6 +20,14 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const [progress, setProgress] = useState<InitProgressReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
+
+  useEffect(() => {
+    // Set initial model based on WebGPU support
+    const defaultModel = isSupported 
+      ? MODELS[0] 
+      : MODELS.find(model => model.type === "transformers.js") || MODELS[0];
+    setSelectedModel(defaultModel);
+  }, [isSupported]);
 
   const handleStartGame = async () => {
     setIsLoading(true);
@@ -91,10 +99,10 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
 
       <button
         onClick={handleStartGame}
-        disabled={!isSupported || isLoading}
+        disabled={isLoading}
         className={`px-8 py-4 text-lg font-semibold rounded-lg transition-colors
           ${
-            isSupported && !isLoading
+           !isLoading
               ? "bg-blue-500 hover:bg-blue-600 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}

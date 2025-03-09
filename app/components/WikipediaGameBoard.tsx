@@ -111,7 +111,6 @@ const generateResponse = async (
       temperature: 0.7,
       max_tokens: 100
     });
-    console.log('Response:', response);
 
     return response.choices[0].message.content;
   } catch (error) {
@@ -169,6 +168,18 @@ const findValidPosition = (
   
   // Try again with an increased radius
   return findValidPosition(centerX, centerY, existingNodes, newNodes, attempt + 1);
+};
+
+const isNeighborNode = (selectedNodeId: string, topic: string, nodes: Node[], edges: Edge[]): boolean => {
+  // Find all nodes connected to the selected node
+  const neighborEdges = edges.filter(edge => edge.source === selectedNodeId);
+  const neighborNodeIds = neighborEdges.map(edge => edge.target);
+  const neighborNodes = nodes.filter(node => neighborNodeIds.includes(node.id));
+  
+  // Check if any neighbor node has the same topic (case insensitive)
+  return neighborNodes.some(node => 
+    node.data.label.toLowerCase() === topic.toLowerCase()
+  );
 };
 
 export default function WikipediaGameBoard() {
@@ -236,25 +247,23 @@ export default function WikipediaGameBoard() {
         let topics = parseResponse(result, maxTopics);
         console.log('Extracted topics:', topics);
         
-        // Filter out the selected node's label and any empty topics
+        // Filter out the selected node's label and any topics that are already neighbors
         topics = topics.filter(topic => 
           topic.toLowerCase() !== selectedNode.data.label.toLowerCase() && 
-          topic.trim().length > 0
+          topic.trim().length > 0 &&
+          !isNeighborNode(selectedNode.id, topic, nodes, edges)
         );
 
         if (!topics.length) {
-          throw new Error('No valid topics found in response');
+          throw new Error('No topics generated');
         }
 
         // Create new nodes and edges, skipping any that would create duplicate IDs
         const newNodes: Node[] = [];
+        const timestamp = Date.now();
         
         for (const topic of topics) {
-          const nodeId = `${selectedNode.id}-${actionType}-${newNodes.length}`;
-          // Skip if node with this ID already exists
-          if (nodes.some(n => n.id === nodeId)) {
-            continue;
-          }
+          const nodeId = `${selectedNode.id}-${actionType}-${timestamp}-${newNodes.length}`;
 
           // Find a valid position for the new node, considering both existing and new nodes
           const position = findValidPosition(
@@ -332,7 +341,7 @@ export default function WikipediaGameBoard() {
       )}
       {error && (
         <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg">
-          <div className="text-red-600">Error: {error}</div>
+          <div className="text-red-600">{error}</div>
         </div>
       )}
     </div>

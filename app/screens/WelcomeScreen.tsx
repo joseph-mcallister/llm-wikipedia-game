@@ -131,10 +131,10 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
 
       <div className="max-w-2xl text-center">
         <p className="text-sm mb-4">
-          *Playing requires downloading a {selectedModel.downloadSize} LLM that
+          *Playing will download a {selectedModel.downloadSize} LLM that
           will run directly in your browser. The model will be cached for future
           games. If you experience performance issues or errors, try selecting a
-          smaller model size.
+          smaller model size from the dropdown menu.
         </p>
       </div>
     </div>

@@ -4,8 +4,6 @@ import { useWebGPU } from '../contexts/WebGPUContext';
 
 export default function WebGPUStatus() {
   const { isSupported } = useWebGPU();
-  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-
   if (isSupported === null) {
     return <div className="text-center">Checking WebGPU support...</div>;
   }
@@ -21,23 +19,15 @@ export default function WebGPUStatus() {
         {!isSupported && (
           <>
             <br />
+            For a faster experience, follow{' '}
             <a 
               href="https://docs.swmansion.com/TypeGPU/blog/troubleshooting/"
               className="text-blue-600 underline"
               target="_blank"
               rel="noopener noreferrer"
             >
-              How to enable WebGPU
+              this guide{' '}
             </a>
-            {isIOS && (
-              <>
-                <br />
-                <br />
-                <span className="text-sm text-gray-600 mt-2">
-                  Go to &apos;Settings &gt; Apps &gt; Safari &gt; Advanced &gt; Feature Flags&apos; and enable WebGPU
-                </span>
-              </>
-            )}
           </>
         )}
       </p>

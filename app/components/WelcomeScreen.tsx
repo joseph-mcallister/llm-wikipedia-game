@@ -46,7 +46,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-top min-h-[80vh] gap-8 p-8">
+    <div className="flex flex-col items-center justify-top min-h-[80vh] gap-8">
       <WebGPUStatus />
       
       <div className="max-w-2xl text-center">
@@ -55,16 +55,6 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
           This game requires downloading a ~1GB language model that will run directly in your browser.
           The model will be cached for future visits.
         </p>
-        <div className="text-left mt-8">
-          <h3 className="text-xl font-semibold mb-4">How it works:</h3>
-          <ol className="list-decimal list-inside space-y-4 text-lg">
-            <li>Download an LLM that runs directly in your browser</li>
-            <li>Receive a starting Wikipedia page and target Wikipedia page</li>
-            <li>The LLM will begin describing the starting topic</li>
-            <li>Click any subtopic in their output to guide to the next topic</li>
-            <li>Repeat until the LLM outputs your target Wikipedia page</li>
-          </ol>
-        </div>
       </div>
 
       {error && (
@@ -82,7 +72,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
       >
-        {isLoading ? 'Downloading model...' : 'Play Game'}
+        {isLoading ? 'Downloading model...' : 'Download and Play'}
       </button>
 
       {isLoading && progress && (

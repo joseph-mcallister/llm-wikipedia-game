@@ -25,7 +25,7 @@ export const MODELS: IModel[] = [
   },
   {
     id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-    name: "Qwen-2.5-0.5B (small, webgpu)",
+    name: "Qwen-2.5-0.5B (fastest, webgpu)",
     downloadSize: "250 MB",
     type: "mlc"
   },
@@ -38,7 +38,7 @@ export const MODELS: IModel[] = [
   },
   {
     id: "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
-    name: "Qwen-2.5-0.5B (small, wasm)",
+    name: "Qwen-2.5-0.5B (fastest, wasm)",
     filePath: "qwen2.5-0.5b-instruct-q8_0.gguf",
     downloadSize: "650 MB",
     type: "wllama"

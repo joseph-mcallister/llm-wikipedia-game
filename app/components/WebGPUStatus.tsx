@@ -16,20 +16,6 @@ export default function WebGPUStatus() {
           {isSupported ? 'supported' : 'not supported'}
         </span>{' '}
         in your browser
-        {!isSupported && (
-          <>
-            <br />
-            For a faster experience, follow{' '}
-            <a 
-              href="https://docs.swmansion.com/TypeGPU/blog/troubleshooting/"
-              className="text-blue-600 underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              this guide{' '}
-            </a>
-          </>
-        )}
       </p>
     </div>
   );

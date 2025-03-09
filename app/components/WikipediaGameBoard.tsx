@@ -484,7 +484,7 @@ export default function WikipediaGameBoard() {
               {isIntersectionMode ? (
                 <>Select a second node</>
               ) : (
-                <>Actions for "{selectedNode.data.label}"</>
+                <>Actions for &quot;{selectedNode.data.label}&quot;</>
               )}
             </h3>
             {!isIntersectionMode && (

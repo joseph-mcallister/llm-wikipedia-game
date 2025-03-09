@@ -1,10 +1,11 @@
 import {
   ChatCompletionSystemMessageParam,
   ChatCompletionUserMessageParam,
+  CreateMLCEngine,
 } from "@mlc-ai/web-llm";
 
 export const generateResponse = async (
-  engineInstance: any,
+  engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,
   prompt: string
 ) => {
   try {

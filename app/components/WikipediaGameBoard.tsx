@@ -12,6 +12,7 @@ import ReactFlow, {
   Background,
   useNodesState,
   useEdgesState,
+  MarkerType,
 } from "reactflow";
 import { useLLM } from "../contexts/LLMContext";
 import {
@@ -19,13 +20,13 @@ import {
   ACTIONS,
   ACTION_COLORS,
   MIN_NODE_DISTANCE,
-  MAX_PLACEMENT_ATTEMPTS,
 } from "../constants/wikipediaGame";
 import "reactflow/dist/style.css";
 
 interface NodeData {
   label: string;
   isBold?: boolean;
+  borderColor?: string;
 }
 
 const generateResponse = async (
@@ -294,9 +295,17 @@ export default function WikipediaGameBoard() {
 
         const newNode = {
           id: nodeId,
-          data: { label: topic, isBold: true },
+          data: { 
+            label: topic, 
+            isBold: true,
+            borderColor: ACTION_COLORS.intersection
+          },
           position,
-          style: { fontWeight: "bold" },
+          style: { 
+            fontWeight: "bold",
+            border: `2px solid ${ACTION_COLORS.intersection}`,
+            borderRadius: '8px',
+          },
         };
 
         newNodes.push(newNode);
@@ -308,12 +317,20 @@ export default function WikipediaGameBoard() {
           source: firstNode.id,
           target: node.id,
           style: { stroke: ACTION_COLORS.intersection },
+          markerEnd: {
+            type: MarkerType.Arrow,
+            color: ACTION_COLORS.intersection,
+          },
         },
         {
           id: `e-${secondNode.id}-${node.id}`,
           source: secondNode.id,
           target: node.id,
           style: { stroke: ACTION_COLORS.intersection },
+          markerEnd: {
+            type: MarkerType.Arrow,
+            color: ACTION_COLORS.intersection,
+          },
         },
       ]);
 
@@ -321,8 +338,8 @@ export default function WikipediaGameBoard() {
         // First unbold all nodes
         const unbolded = nodes.map((node) => ({
           ...node,
-          data: { ...node.data, isBold: false },
-          style: { fontWeight: "normal" },
+          data: { ...node.data, isBold: false, borderColor: undefined },
+          style: { fontWeight: "normal", border: 'none', padding: '8px' },
         }));
         // Then add new nodes
         return [...unbolded, ...newNodes];
@@ -397,8 +414,8 @@ export default function WikipediaGameBoard() {
         setNodes((nodes) =>
           nodes.map((node) => ({
             ...node,
-            data: { ...node.data, isBold: false },
-            style: { fontWeight: "normal" },
+            data: { ...node.data, isBold: false, borderColor: undefined },
+            style: { fontWeight: "normal", border: 'none' },
           }))
         );
 
@@ -420,9 +437,17 @@ export default function WikipediaGameBoard() {
 
           const newNode = {
             id: nodeId,
-            data: { label: topic, isBold: true },
+            data: { 
+              label: topic, 
+              isBold: true,
+              borderColor: ACTION_COLORS[actionType]
+            },
             position,
-            style: { fontWeight: "bold" },
+            style: { 
+              fontWeight: "bold",
+              border: `2px solid ${ACTION_COLORS[actionType]}`,
+              borderRadius: '8px',
+            },
           };
 
           newNodes.push(newNode);
@@ -433,6 +458,10 @@ export default function WikipediaGameBoard() {
           source: selectedNode.id,
           target: node.id,
           style: { stroke: ACTION_COLORS[actionType] },
+          markerEnd: {
+            type: MarkerType.Arrow,
+            color: ACTION_COLORS[actionType],
+          },
         }));
 
         setNodes((nodes) => [...nodes, ...newNodes]);

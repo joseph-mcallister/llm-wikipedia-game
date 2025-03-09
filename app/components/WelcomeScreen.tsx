@@ -9,11 +9,12 @@ import WebGPUStatus from './WebGPUStatus';
 interface WelcomeScreenProps {
   onGameStart: () => void;
 }
-
-enum WEB_LLM_MODELS {
-  LLAMA_3_2_1B_INSTRUCT_Q4F32_1 = "Llama-3.2-1B-Instruct-q4f32_1-MLC",
-  QWEN2_5_0_5B_INSTRUCT_Q4F32_1 = "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-}
+    
+ enum WEB_LLM_MODELS {
+    LLAMA_3_2_1B_INSTRUCT_Q4F32_1 = "Llama-3.2-1B-Instruct-q4f32_1-MLC",
+    QWEN2_5_0_5B_INSTRUCT_Q4F32_1 = "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+  }
+  
 
 export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const { isSupported } = useWebGPU();
@@ -31,7 +32,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
     try {
       if (!engineInstance) {
         const engine = await CreateMLCEngine(
-          WEB_LLM_MODELS.LLAMA_3_2_1B_INSTRUCT_Q4F32_1,
+          WEB_LLM_MODELS.QWEN2_5_0_5B_INSTRUCT_Q4F32_1,
           { 
             initProgressCallback: (report: InitProgressReport) => {
               console.log('Model loading:', report);

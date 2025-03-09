@@ -98,7 +98,7 @@ export default function WikipediaGameBoard() {
       return `${step.from} → ${step.to} (${step.action})`;
     }).join("\n");
     const nodeCount = nodes.length;
-    const message = `Found in ${nodeCount} generated nodes! \n${pathText}`;
+    const message = `Found a path from ${startWord} to ${endWord} in ${nodeCount} generated topics! \n${pathText}`;
     navigator.clipboard.writeText(message);
   };
 
@@ -363,7 +363,7 @@ export default function WikipediaGameBoard() {
               <div>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{startWord}</span> to <span className="font-bold text-pink-400">{endWord}</span>! 🎉</div>
               <div className="text-md mt-2">Come back tomorrow for another game!</div>
               <div className="mt-4 bg-gray-800 p-4 rounded-lg mx-auto max-w-2xl">
-                <div className="text-left mb-2 text-sm">Found in <b>{nodes.length}</b> generated nodes!</div>
+                <div className="text-left mb-2 text-sm">Found in <b>{nodes.length}</b> generated topics!</div>
                 {winningPath.map((step, index) => (
                   <div key={index} className="text-left mb-2 text-sm">
                     {step.action === "intersection" ? (

@@ -5,16 +5,11 @@ import { useWebGPU } from '../contexts/WebGPUContext';
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from '../contexts/LLMContext';
 import WebGPUStatus from '../components/WebGPUStatus';
+import { LLMS } from '../utils/webLLM';
 
 interface WelcomeScreenProps {
   onGameStart: () => void;
 }
-    
- enum WEB_LLM_MODELS {
-    LLAMA_3_2_1B_INSTRUCT_Q4F32_1 = "Llama-3.2-1B-Instruct-q4f32_1-MLC",
-    QWEN2_5_0_5B_INSTRUCT_Q4F32_1 = "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-  }
-  
 
 export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const { isSupported } = useWebGPU();
@@ -22,6 +17,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<InitProgressReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState(LLMS[0]);
 
   const handleStartGame = async () => {
     if (!isSupported) return;
@@ -32,7 +28,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
     try {
       if (!engineInstance) {
         const engine = await CreateMLCEngine(
-          WEB_LLM_MODELS.QWEN2_5_0_5B_INSTRUCT_Q4F32_1,
+          selectedModel.id,
           { 
             initProgressCallback: (report: InitProgressReport) => {
               console.log('Model loading:', report);
@@ -55,10 +51,31 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
     <div className="flex flex-col items-center justify-top min-h-[80vh] gap-8">
       <WebGPUStatus />
       
+      <div className="flex flex-col items-center gap-2">
+        <select 
+          id="model-select"
+          value={selectedModel.id}
+          onChange={(e) => setSelectedModel(LLMS.find(model => model.id === e.target.value) || LLMS[0])}
+          className={`p-4 rounded-lg border border-black/[.08] dark:border-white/[.145] text-center bg-black ${!isSupported ? 'opacity-50' : ''} text-white`}
+          disabled={isLoading || (selectedModel.requiresWebGPU && !isSupported)}
+        >
+          {LLMS.map((model) => (
+            <option 
+              key={model.id} 
+              value={model.id} 
+              className="bg-black text-white"
+              disabled={model.requiresWebGPU && !isSupported}
+            >
+              {model.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="max-w-2xl text-center">
-        <p className="text-lg mb-4">
-          This game requires downloading a ~1GB LLM that will run directly in your browser.
-          The model will be cached for future visits.
+        <p className="text-sm mb-4">
+          This game requires downloading a {selectedModel.downloadSize} LLM that will run directly in your browser. The mode will be cached.
+          If you experience performance issues or errors, try selecting a smaller model size.
         </p>
       </div>
 

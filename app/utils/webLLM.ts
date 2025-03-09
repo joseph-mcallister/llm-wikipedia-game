@@ -4,6 +4,29 @@ import {
   CreateMLCEngine,
 } from "@mlc-ai/web-llm";
 
+interface LLM {
+  id: string;
+  name: string;
+  downloadSize: string;
+  requiresWebGPU: boolean;
+}
+
+
+export const LLMS = [
+  {
+    id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",
+    name: "Llama-3.2-1B (best)",
+    downloadSize: "650 MB",
+    requiresWebGPU: true, 
+  },
+  {
+    id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+    name: "Qwen-2.5-0.5B (smallest)",
+    downloadSize: "200 MB",
+    requiresWebGPU: false,
+  },
+];
+
 export const generateResponse = async (
   engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,
   prompt: string

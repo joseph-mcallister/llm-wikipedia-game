@@ -330,6 +330,18 @@ export default function WikipediaGameBoard() {
     }
   };
 
+  const handleReset = useCallback(() => {
+    // Reset to initial state
+    setNodes((nodes) => nodes.filter(node => !node.id.includes('-')));
+    setEdges([]);
+    setSelectedNode(null);
+    setSecondarySelectedNode(null);
+    setIsIntersectionMode(false);
+    setHasWon(false);
+    setWinningPath([]);
+    setError(null);
+  }, []);
+
   return (
     <div>
       <div className="top-0 left-0 right-0 text-center z-50 mb-8">
@@ -428,6 +440,15 @@ export default function WikipediaGameBoard() {
             <div className="text-red-600">{error}</div>
           </div>
         )}
+      </div>
+
+      <div className="mt-4 text-center">
+        <button
+          onClick={handleReset}
+          className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+        >
+          Reset Board
+        </button>
       </div>
     </div>
   );

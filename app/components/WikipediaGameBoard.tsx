@@ -540,7 +540,7 @@ export default function WikipediaGameBoard() {
                     {step.action === "intersection" ? (
                       <span>Intersection of <b>{step.from}</b> → <b>{step.to}</b></span>
                     ) : (
-                      <span><b>{step.from}</b> → <b>{step.to}</b> ({step.action})</span>
+                      <span><b>{step.from}</b> ({step.action}) → <b>{step.to}</b></span>
                     )}
                   </div>
                 ))}

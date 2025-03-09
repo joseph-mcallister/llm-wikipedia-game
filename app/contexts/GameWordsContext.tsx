@@ -22,10 +22,8 @@ interface GameWordsContextType {
 const GameWordsContext = createContext<GameWordsContextType | null>(null);
 
 export function GameWordsProvider({ children }: { children: React.ReactNode }) {
-  // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
   
-  // Get today's words or fallback to default
   const [startWord, endWord] = DAILY_WORDS[today] || DEFAULT_WORDS;
 
   return (

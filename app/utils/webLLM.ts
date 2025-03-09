@@ -22,7 +22,7 @@ export const LLMS = [
   {
     id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
     name: "Qwen-2.5-0.5B (smallest)",
-    downloadSize: "200 MB",
+    downloadSize: "250 MB",
     requiresWebGPU: false,
   },
 ];

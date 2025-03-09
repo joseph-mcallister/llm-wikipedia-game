@@ -5,7 +5,7 @@ import React, { createContext, useContext } from 'react';
 const DEFAULT_WORDS = ['USA', 'Elon Musk'];
 
 const DAILY_WORDS: Record<string, [string, string]> = {
-  '2025-03-09': ['USA', 'Economy'],
+  '2025-03-09': ['USA', 'Elon Musk'],
   '2025-03-10': ['Bitcoin', 'China'],
   '2025-03-11': ['Pizza', 'Italy'],
   '2025-03-12': ['Shakespeare', 'Hollywood'],

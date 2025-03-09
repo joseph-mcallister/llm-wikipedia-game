@@ -72,13 +72,6 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
         </select>
       </div>
 
-      <div className="max-w-2xl text-center">
-        <p className="text-sm mb-4">
-          This game requires downloading a {selectedModel.downloadSize} LLM that will run directly in your browser. The mode will be cached.
-          If you experience performance issues or errors, try selecting a smaller model size.
-        </p>
-      </div>
-
       {error && (
         <div className="p-4 bg-red-100 text-red-700 rounded-lg">
           {error}
@@ -94,7 +87,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
       >
-        {isLoading ? 'Downloading model...' : 'Download and Play'}
+        {isLoading ? 'Downloading model...' : 'Download and Play*'}
       </button>
 
       {isLoading && progress && (
@@ -103,6 +96,13 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
           <p className="text-sm text-gray-600">{progress.text}</p>
         </div>
       )}
+
+      <div className="max-w-2xl text-center">
+        <p className="text-sm mb-4">
+          *Playing requires downloading a {selectedModel.downloadSize} LLM that will run directly in your browser. The model will be cached for future games.
+          If you experience performance issues or errors, try selecting a smaller model size.
+        </p>
+      </div>
     </div>
   );
 } 

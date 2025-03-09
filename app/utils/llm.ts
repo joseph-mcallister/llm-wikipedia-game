@@ -4,88 +4,83 @@ import {
   CreateMLCEngine,
 } from "@mlc-ai/web-llm";
 
-import { Wllama } from '@wllama/wllama/esm/index.js';
+import { Wllama, WllamaChatMessage } from '@wllama/wllama/esm/index.js';
 import WasmFromCDN from '@wllama/wllama/esm/wasm-from-cdn.js';
 
-interface Model {
+export interface IModel {
   id: string;
   name: string;
   downloadSize: string;
-  type: "mlc" | "transformers.js";
+  filePath?: string;
+  type: "mlc" | "wllama"
 }
 
-export const MODELS: Model[] = [
+
+export const MODELS: IModel[] = [
   {
     id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",
-    name: "Llama-3.2-1B (best)",
+    name: "Llama-3.2-1B (best, webgpu)",
     downloadSize: "650 MB",
-    type: "mlc",
+    type: "mlc"
   },
   {
     id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-    name: "Qwen-2.5-0.5B (small",
+    name: "Qwen-2.5-0.5B (small, webgpu)",
     downloadSize: "250 MB",
-    type: "mlc",
+    type: "mlc"
+  },
+  {
+    id: "hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF",
+    name: "Llama-3.2-1B (best, wasm)",
+    filePath: "llama-3.2-1b-instruct-q4_k_m.gguf",
+    downloadSize: "800 MB",
+    type: "wllama"
+  },
+  {
+    id: "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+    name: "Qwen-2.5-0.5B (small, wasm)",
+    filePath: "qwen2.5-0.5b-instruct-q8_0.gguf",
+    downloadSize: "650 MB",
+    type: "wllama"
   },
 ];
 
-
-export const generateResponseWithWllama = async (prompt: string) => {
-    const wllamaInstance = new Wllama(WasmFromCDN);
-    // Define a function for tracking the model download progress
-    const progressCallback =  ({ loaded, total }: { loaded: number, total: number }) => {
-      // Calculate the progress as a percentage
-      const progressPercentage = Math.round((loaded / total) * 100);
-      // Log the progress in a user-friendly format
-      console.log(`Downloading... ${progressPercentage}%`);
-    };
-    // Load GGUF from Hugging Face hub
-    // (alternatively, you can use loadModelFromUrl if the model is not from HF hub)
-    await wllamaInstance.loadModelFromHF(
-      'ggml-org/models',
-      'tinyllamas/stories260K.gguf',
-      {
-        progressCallback,
-      }
-    );
-    const outputText = await wllamaInstance.createCompletion("hey are you there", {
-      nPredict: 50,
-      sampling: {
-        temp: 0.5,
-        top_k: 40,
-        top_p: 0.9,
-      },
-    });
-  console.log(outputText);
+export const createWllamaInstance = async (model: IModel, progressCallback: ({loaded, total}: {loaded: number, total: number}) => void) => {
+  const wllamaInstance = new Wllama(WasmFromCDN); // TODO: Figure out how to get nextjs to import the wasm from node module
+  if (model.type !== "wllama" || model.filePath === undefined) {
+    throw new Error("Model not configured correctly");
+  }
+  await wllamaInstance.loadModelFromHF(
+    model.id,
+    model.filePath,
+    {
+      progressCallback,
+    }
+  );
+  return wllamaInstance;
 }
 
-// export const generateResponseWithWasm = async (prompt: string, pipe: (prompt: any, options: any) => TextGenerationPipeline) => {
-//   const messages = [
-//     { role: "system", content: "You are an AI assistant that responds ONLY with comma-separated lists of topics" },
-//     { role: "user", content: prompt }
-//   ];
-//   console.log(messages)
-//   try {
-//     const output= await pipe(messages, {
-//       max_new_tokens: 20,
-//       temperature: 0.7
-//     }) as any;
-//     console.log(output)
-//     const text = output[0].generated_text[2].content;
-//     console.log(text)
-//     return text;
-//   } catch (error) {
-//     console.error("WebLLM error:", error);
-//     throw error;
-//   }
-// }
+export const generateResponseWithWllama = async (wllamaInstance: Wllama, prompt: string) => {
+  const messages: WllamaChatMessage[] = [
+    {
+      role: "system",
+      content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
+    },
+    { role: "user", content: prompt },
+  ];
+  const outputText = await wllamaInstance.createChatCompletion(messages,{ 
+    sampling: {
+      temp: 0.7,
+    },
+  });
+  return outputText;
+}
 
 export const generateResponseWithMLC = async (
   engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,
   prompt: string
 ) => {
   try {
-    await generateResponseWithWllama(prompt);
     const messages: (
       | ChatCompletionSystemMessageParam
       | ChatCompletionUserMessageParam

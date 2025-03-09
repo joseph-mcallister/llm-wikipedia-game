@@ -5,26 +5,30 @@ import { useWebGPU } from "../contexts/WebGPUContext";
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from "../contexts/LLMContext";
 import WebGPUStatus from "../components/WebGPUStatus";
-import { MODELS } from "../utils/llm";
+import { MODELS, createWllamaInstance } from "../utils/llm";
 
 interface WelcomeScreenProps {
   onGameStart: () => void;
 }
 
+interface DownloadProgressReport {
+  percentCompleted: number;
+  text: string | undefined;
+}
+
 export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const { isSupported } = useWebGPU();
-  const { engineInstance, setEngineInstance } =
+  const { engineInstance, setEngineInstance, wllamaInstance, setWllamaInstance } =
     useLLM();
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState<InitProgressReport | null>(null);
+  const [progress, setProgress] = useState<DownloadProgressReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
 
   useEffect(() => {
-    // Set initial model based on WebGPU support
     const defaultModel = isSupported 
       ? MODELS[0] 
-      : MODELS.find(model => model.type === "transformers.js") || MODELS[0];
+      : MODELS.find(model => model.type === "wllama") || MODELS[0];
     setSelectedModel(defaultModel);
   }, [isSupported]);
 
@@ -33,20 +37,29 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
     setError(null);
 
     try {
-      if (selectedModel.type === "transformers.js") {
-        // if (!pipeInstance) {
-        //   const pipe = await pipeline(
-        //     "text-generation",
-        //     "onnx-community/Qwen2.5-0.5B-Instruct"
-        //   ) as TextGenerationPipeline;
-        //   setPipeInstance(() => pipe);
-        // }
+      if (selectedModel.type === "wllama") {
+        const progressCallback =  ({ loaded, total }: { loaded: number, total: number }) => {
+          const progressPercentage = Math.round((loaded / total) * 100);
+          console.log(`Loaded: ${loaded}, Total: ${total}`);
+          console.log(`Downloading... ${progressPercentage}%`);
+          const progressReport: DownloadProgressReport = {
+            percentCompleted: progressPercentage,
+            text: undefined,
+          }
+          setProgress(progressReport);
+        };
+        const wllamaInstance = await createWllamaInstance(selectedModel, progressCallback);
+        setWllamaInstance(wllamaInstance);
       } else {
         if (!engineInstance) {
           const engine = await CreateMLCEngine(selectedModel.id, {
             initProgressCallback: (report: InitProgressReport) => {
               console.log("Model loading:", report);
-              setProgress(report);
+              const progressReport: DownloadProgressReport = {
+                percentCompleted: report.progress * 100,
+                text: report.text,
+              }
+              setProgress(progressReport);
             },
           });
           setEngineInstance(engine);
@@ -77,7 +90,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
           className={`p-4 rounded-lg border border-black/[.08] dark:border-white/[.145] text-center bg-black ${
             !isSupported ? "opacity-50" : ""
           } text-white`}
-          disabled={isLoading || (selectedModel.type === "mlc" && !isSupported)}
+          disabled={isLoading}
         >
           {MODELS.map((model) => (
             <option
@@ -111,7 +124,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
 
       {isLoading && progress && (
         <div className="text-center">
-          <p>Download progress: {Math.round(progress.progress * 100)}%</p>
+          <p>Download progress: {Math.round(progress.percentCompleted)}%</p>
           <p className="text-sm text-gray-600">{progress.text}</p>
         </div>
       )}

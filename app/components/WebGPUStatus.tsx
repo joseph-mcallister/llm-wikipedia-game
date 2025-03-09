@@ -34,7 +34,7 @@ export default function WebGPUStatus() {
                 <br />
                 <br />
                 <span className="text-sm text-gray-600 mt-2">
-                  Go to 'Settings &gt; Apps &gt; Safari &gt; Advanced &gt; Feature Flags' and enable WebGPU
+                  Go to &apos;Settings &gt; Apps &gt; Safari &gt; Advanced &gt; Feature Flags&apos; and enable WebGPU
                 </span>
               </>
             )}

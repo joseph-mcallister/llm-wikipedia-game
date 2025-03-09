@@ -172,6 +172,10 @@ export default function WikipediaGameBoard() {
     setSelectedNode(node);
   }, []);
 
+  const handlePaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
   const parseResponse = (response: unknown, maxTopics: number): string[] => {
     try {
       // Helper to capitalize first letter
@@ -347,6 +351,7 @@ export default function WikipediaGameBoard() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
           fitView
         >
           <Background />

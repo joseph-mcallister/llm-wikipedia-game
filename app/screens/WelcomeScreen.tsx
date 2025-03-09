@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useWebGPU } from '../contexts/WebGPUContext';
+import { useState } from "react";
+import { useWebGPU } from "../contexts/WebGPUContext";
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
-import { useLLM } from '../contexts/LLMContext';
-import WebGPUStatus from '../components/WebGPUStatus';
-import { LLMS } from '../utils/llm';
+import { useLLM } from "../contexts/LLMContext";
+import WebGPUStatus from "../components/WebGPUStatus";
+import { MODELS } from "../utils/llm";
+import { pipeline, TextGenerationPipeline } from "@huggingface/transformers";
 
 interface WelcomeScreenProps {
   onGameStart: () => void;
@@ -13,35 +14,41 @@ interface WelcomeScreenProps {
 
 export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const { isSupported } = useWebGPU();
-  const { engineInstance, setEngineInstance } = useLLM();
+  const { engineInstance, setEngineInstance, setPipeInstance, pipeInstance } =
+    useLLM();
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<InitProgressReport | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState(LLMS[0]);
+  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
 
   const handleStartGame = async () => {
-    if (!isSupported) return;
-    
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      if (!engineInstance) {
-        const engine = await CreateMLCEngine(
-          selectedModel.id,
-          { 
+      if (selectedModel.type === "transformers.js") {
+        if (!pipeInstance) {
+          const pipe = await pipeline(
+            "text-generation",
+            "onnx-community/Qwen2.5-0.5B-Instruct"
+          ) as TextGenerationPipeline;
+          setPipeInstance(() => pipe);
+        }
+      } else {
+        if (!engineInstance) {
+          const engine = await CreateMLCEngine(selectedModel.id, {
             initProgressCallback: (report: InitProgressReport) => {
-              console.log('Model loading:', report);
+              console.log("Model loading:", report);
               setProgress(report);
-            }
-          }
-        );
-        setEngineInstance(engine);
+            },
+          });
+          setEngineInstance(engine);
+        }
       }
       onGameStart();
     } catch (err) {
-      console.error('Failed to initialize game:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start game');
+      console.error("Failed to initialize game:", err);
+      setError(err instanceof Error ? err.message : "Failed to start game");
     } finally {
       setIsLoading(false);
     }
@@ -50,19 +57,25 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   return (
     <div className="flex flex-col items-center justify-top min-h-[80vh] gap-8">
       <WebGPUStatus />
-      
+
       <div className="flex flex-col items-center gap-2">
-        <select 
+        <select
           id="model-select"
           value={selectedModel.id}
-          onChange={(e) => setSelectedModel(LLMS.find(model => model.id === e.target.value) || LLMS[0])}
-          className={`p-4 rounded-lg border border-black/[.08] dark:border-white/[.145] text-center bg-black ${!isSupported ? 'opacity-50' : ''} text-white`}
+          onChange={(e) =>
+            setSelectedModel(
+              MODELS.find((model) => model.id === e.target.value) || MODELS[0]
+            )
+          }
+          className={`p-4 rounded-lg border border-black/[.08] dark:border-white/[.145] text-center bg-black ${
+            !isSupported ? "opacity-50" : ""
+          } text-white`}
           disabled={isLoading || (selectedModel.type === "mlc" && !isSupported)}
         >
-          {LLMS.map((model) => (
-            <option 
-              key={model.id} 
-              value={model.id} 
+          {MODELS.map((model) => (
+            <option
+              key={model.id}
+              value={model.id}
               className="bg-black text-white"
               disabled={model.type === "mlc" && !isSupported}
             >
@@ -73,21 +86,20 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-lg">
-          {error}
-        </div>
+        <div className="p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>
       )}
 
       <button
         onClick={handleStartGame}
         disabled={!isSupported || isLoading}
         className={`px-8 py-4 text-lg font-semibold rounded-lg transition-colors
-          ${isSupported && !isLoading 
-            ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          ${
+            isSupported && !isLoading
+              ? "bg-blue-500 hover:bg-blue-600 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
       >
-        {isLoading ? 'Downloading model...' : 'Download and Play*'}
+        {isLoading ? "Downloading model..." : "Download and Play*"}
       </button>
 
       {isLoading && progress && (
@@ -99,10 +111,12 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
 
       <div className="max-w-2xl text-center">
         <p className="text-sm mb-4">
-          *Playing requires downloading a {selectedModel.downloadSize} LLM that will run directly in your browser. The model will be cached for future games.
-          If you experience performance issues or errors, try selecting a smaller model size.
+          *Playing requires downloading a {selectedModel.downloadSize} LLM that
+          will run directly in your browser. The model will be cached for future
+          games. If you experience performance issues or errors, try selecting a
+          smaller model size.
         </p>
       </div>
     </div>
   );
-} 
+}

@@ -3,16 +3,16 @@ import {
   ChatCompletionUserMessageParam,
   CreateMLCEngine,
 } from "@mlc-ai/web-llm";
-import { pipeline } from "@huggingface/transformers";
+import { pipeline, TextGenerationPipeline } from "@huggingface/transformers";
 
-interface LLM {
+interface Model {
   id: string;
   name: string;
   downloadSize: string;
-  type: "mlc" | "onnx";
+  type: "mlc" | "transformers.js";
 }
 
-export const LLMS: LLM[] = [
+export const MODELS: Model[] = [
   {
     id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",
     name: "Llama-3.2-1B (best)",
@@ -29,34 +29,42 @@ export const LLMS: LLM[] = [
     id: "onnx-community/Qwen2.5-0.5B-Instruct",
     name: "Qwen-2.5-0.5B (wasm)",
     downloadSize: "250 MB",
-    type: "onnx",
+    type: "transformers.js",
+  },
+  {
+    id: "onnx-community/Llama-3.2-1B-Instruct",
+    name: "Llama-3.2-1B (wasm)",
+    downloadSize: "650 MB",
+    type: "transformers.js",
   }
 ];
 
-export const generateResponseWithoutWebGPU = async (prompt: string) => {
-  const chat = [
-    {"role": "system", "content": "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting."},
-    {"role": "user", "content": prompt}
-  ]
-  const pipe = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct")
-  const output = await pipe(chat, {
-    max_new_tokens: 100,
-    temperature: 0.7
-  });
-
-  console.log("NO WEB GPU:")
-  console.log(output);
+export const generateResponseWithWasm = async (prompt: string, pipe: (prompt: any, options: any) => TextGenerationPipeline) => {
+  const messages = [
+    { role: "system", content: "You are an AI assistant that responds ONLY with comma-separated lists of topics" },
+    { role: "user", content: prompt }
+  ];
+  console.log(messages)
+  try {
+    const output= await pipe(messages, {
+      max_new_tokens: 20,
+      temperature: 0.7
+    }) as any;
+    console.log(output)
+    const text = output[0].generated_text[2].content;
+    console.log(text)
+    return text;
+  } catch (error) {
+    console.error("WebLLM error:", error);
+    throw error;
+  }
 }
 
-
-
-export const generateResponse = async (
+export const generateResponseWithMLC = async (
   engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,
   prompt: string
 ) => {
   try {
-    await generateResponseWithoutWebGPU(prompt);
-    // Format the prompt as a chat message
     const messages: (
       | ChatCompletionSystemMessageParam
       | ChatCompletionUserMessageParam

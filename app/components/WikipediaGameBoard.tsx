@@ -16,7 +16,7 @@ import {
   ACTIONS,
   ACTION_COLORS,
 } from "../constants/wikipediaGame";
-import { generateResponse, parseResponse } from "../utils/llm";
+import { generateResponseWithMLC, generateResponseWithWasm, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
 
 interface NodeData {
@@ -37,7 +37,7 @@ interface EdgeData {
 
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
-  const { engineInstance } = useLLM();
+  const { engineInstance, pipeInstance } = useLLM();
   const { 
     nodes, 
     edges, 
@@ -58,6 +58,18 @@ export default function WikipediaGameBoard() {
   const [error, setError] = useState<string | null>(null);
   const [hasWon, setHasWon] = useState(false);
   const [winningPath, setWinningPath] = useState<PathStep[]>([]);
+
+  const generateResponse = async (prompt: string) => {
+    if (pipeInstance) {
+      const result = await generateResponseWithWasm(prompt, pipeInstance);
+      return result;
+    } else if (engineInstance) {
+      const result = await generateResponseWithMLC(engineInstance, prompt);
+      return result;
+    } else {
+      throw new Error("LLM not initialized");
+    }
+  }
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     if (isIntersectionMode && selectedNode) {
@@ -107,7 +119,7 @@ export default function WikipediaGameBoard() {
 
       console.log("Sending intersection prompt:", prompt);
 
-      const result = await generateResponse(engineInstance, prompt);
+      const result = await generateResponse(prompt);
       let topics = parseResponse(result, maxTopics);
 
       topics = topics.filter(
@@ -207,7 +219,7 @@ export default function WikipediaGameBoard() {
   };
 
   const handleAction = async (actionType: ActionType) => {
-    if (!selectedNode || !engineInstance) return;
+    if (!selectedNode) return;
 
     if (actionType === 'intersection') {
       setIsIntersectionMode(true);
@@ -236,8 +248,7 @@ export default function WikipediaGameBoard() {
       console.log("Sending prompt:", prompt);
 
       try {
-        const result = await generateResponse(engineInstance, prompt);
-        console.log("Raw LLM result:", result);
+        const result = await generateResponse(prompt);
 
         let topics = parseResponse(result, maxTopics);
         console.log("Extracted topics:", topics);

@@ -354,7 +354,7 @@ export default function WikipediaGameBoard() {
         </ReactFlow>
 
         {/* Action Menu */}
-        {selectedNode && (
+        {selectedNode && !loading && (
           <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
             <h3 className="text-lg font-semibold mb-2 text-gray-900">
               Actions for &quot;{selectedNode.data.label}&quot;

@@ -150,80 +150,155 @@ const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge[]): str
 };
 
 export default function WikipediaGameBoard() {
+  // const START_WORD = "USA";
+  // const TARGET_WORD = "Satya Nadella";
+  const START_WORD = "Egyptian pyramids";
+  const TARGET_WORD = "Joe Rogan";
+
   const { engineInstance } = useLLM();
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([
     {
       id: "0",
       type: "default",
-      data: { label: "USA", isBold: false },
+      data: { label: START_WORD, isBold: false },
       position: { x: 0, y: 0 },
     },
   ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
+  const [isIntersectionMode, setIsIntersectionMode] = useState(false);
+  const [secondarySelectedNode, setSecondarySelectedNode] = useState<Node<NodeData> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasWon, setHasWon] = useState(false);
 
-  const START_WORD = "USA";
-  const TARGET_WORD = "Satya Nadella";
-
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    setSelectedNode(node);
-  }, []);
+    if (isIntersectionMode && selectedNode) {
+      // Don't allow selecting the same node
+      if (node.id === selectedNode.id) {
+        return;
+      }
+      setSecondarySelectedNode(node);
+      handleIntersection(selectedNode, node);
+    } else {
+      setSelectedNode(node);
+      setSecondarySelectedNode(null);
+    }
+  }, [isIntersectionMode, selectedNode]);
 
   const handlePaneClick = useCallback(() => {
     setSelectedNode(null);
+    setSecondarySelectedNode(null);
+    setIsIntersectionMode(false);
   }, []);
 
-  const parseResponse = (response: unknown, maxTopics: number): string[] => {
+  // Add new function to handle intersection
+  const handleIntersection = async (firstNode: Node<NodeData>, secondNode: Node<NodeData>) => {
+    if (!engineInstance) return;
+
     try {
-      // Helper to capitalize first letter
-      const capitalize = (str: string) =>
-        str.charAt(0).toUpperCase() + str.slice(1);
+      setLoading(true);
+      setError(null);
 
-      // Handle array response
-      if (Array.isArray(response)) {
-        const text = response[0]?.generated_text || "";
-        return text
-          .split(",")
-          .map((item: string) => capitalize(item.trim()))
-          .filter((item: string) => item.length > 0)
-          .slice(0, maxTopics);
+      const maxTopics = 4;
+      const action = ACTIONS.find((a) => a.type === 'intersection');
+      if (!action) return;
+
+      const prompt = action.prompt
+        .replace("{topic1}", firstNode.data.label)
+        .replace("{topic2}", secondNode.data.label)
+        .replace("{n}", maxTopics.toString());
+
+      console.log("Sending intersection prompt:", prompt);
+
+      const result = await generateResponse(engineInstance, prompt);
+      let topics = parseResponse(result, maxTopics);
+
+      // Filter out topics that are the same as either selected node or are already neighbors
+      topics = topics.filter(
+        (topic) =>
+          topic.toLowerCase() !== firstNode.data.label.toLowerCase() &&
+          topic.toLowerCase() !== secondNode.data.label.toLowerCase() &&
+          topic.trim().length > 0 &&
+          !isNeighborNode(firstNode.id, topic, nodes, edges) &&
+          !isNeighborNode(secondNode.id, topic, nodes, edges)
+      );
+
+      if (!topics.length) {
+        throw new Error("No intersection topics generated");
       }
 
-      // Handle string response
-      if (typeof response === "string") {
-        return response
-          .split(",")
-          .map((item: string) => capitalize(item.trim()))
-          .filter((item: string) => item.length > 0)
-          .slice(0, maxTopics);
+      // Calculate midpoint between the two nodes for new node placement
+      const centerX = (firstNode.position.x + secondNode.position.x) / 2;
+      const centerY = (firstNode.position.y + secondNode.position.y) / 2;
+
+      // Create new nodes and edges
+      const newNodes: Node[] = [];
+      const timestamp = Date.now();
+
+      for (const topic of topics) {
+        const nodeId = `intersection-${timestamp}-${newNodes.length}`;
+        const position = findValidPosition(centerX, centerY, nodes, newNodes);
+
+        const newNode = {
+          id: nodeId,
+          data: { label: topic, isBold: true },
+          position,
+          style: { fontWeight: "bold" },
+        };
+
+        newNodes.push(newNode);
       }
 
-      // Handle object response
-      if (
-        response &&
-        typeof response === "object" &&
-        "generated_text" in response
-      ) {
-        const text = (response as { generated_text: string }).generated_text;
-        return text
-          .split(",")
-          .map((item: string) => capitalize(item.trim()))
-          .filter((item: string) => item.length > 0)
-          .slice(0, maxTopics);
-      }
+      const newEdges: Edge[] = newNodes.flatMap((node) => [
+        {
+          id: `e-${firstNode.id}-${node.id}`,
+          source: firstNode.id,
+          target: node.id,
+          style: { stroke: ACTION_COLORS.intersection },
+        },
+        {
+          id: `e-${secondNode.id}-${node.id}`,
+          source: secondNode.id,
+          target: node.id,
+          style: { stroke: ACTION_COLORS.intersection },
+        },
+      ]);
 
-      return [];
+      setNodes((nodes) => {
+        // First unbold all nodes
+        const unbolded = nodes.map((node) => ({
+          ...node,
+          data: { ...node.data, isBold: false },
+          style: { fontWeight: "normal" },
+        }));
+        // Then add new nodes
+        return [...unbolded, ...newNodes];
+      });
+      
+      setEdges((edges) => [...edges, ...newEdges]);
+
+      // Check if any of the new nodes contains the target word
+      if (topics.some((topic) => topic.toLowerCase().includes(TARGET_WORD.toLowerCase()))) {
+        setHasWon(true);
+      }
     } catch (err) {
-      console.error("Parse error:", err);
-      return [];
+      setError(err instanceof Error ? err.message : "Failed to generate intersection");
+    } finally {
+      setLoading(false);
+      setSelectedNode(null);
+      setSecondarySelectedNode(null);
+      setIsIntersectionMode(false);
     }
   };
 
   const handleAction = async (actionType: ActionType) => {
     if (!selectedNode || !engineInstance) return;
+
+    if (actionType === 'intersection') {
+      setIsIntersectionMode(true);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -329,6 +404,52 @@ export default function WikipediaGameBoard() {
     }
   };
 
+  const parseResponse = (response: unknown, maxTopics: number): string[] => {
+    try {
+      // Helper to capitalize first letter
+      const capitalize = (str: string) =>
+        str.charAt(0).toUpperCase() + str.slice(1);
+
+      // Handle array response
+      if (Array.isArray(response)) {
+        const text = response[0]?.generated_text || "";
+        return text
+          .split(",")
+          .map((item: string) => capitalize(item.trim()))
+          .filter((item: string) => item.length > 0)
+          .slice(0, maxTopics);
+      }
+
+      // Handle string response
+      if (typeof response === "string") {
+        return response
+          .split(",")
+          .map((item: string) => capitalize(item.trim()))
+          .filter((item: string) => item.length > 0)
+          .slice(0, maxTopics);
+      }
+
+      // Handle object response
+      if (
+        response &&
+        typeof response === "object" &&
+        "generated_text" in response
+      ) {
+        const text = (response as { generated_text: string }).generated_text;
+        return text
+          .split(",")
+          .map((item: string) => capitalize(item.trim()))
+          .filter((item: string) => item.length > 0)
+          .slice(0, maxTopics);
+      }
+
+      return [];
+    } catch (err) {
+      console.error("Parse error:", err);
+      return [];
+    }
+  };
+
   return (
     <div>
       <div className="top-0 left-0 right-0 text-center z-50 mb-8">
@@ -362,20 +483,39 @@ export default function WikipediaGameBoard() {
         {selectedNode && !loading && (
           <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
             <h3 className="text-lg font-semibold mb-2 text-gray-900">
-              Actions for &quot;{selectedNode.data.label}&quot;
+              {isIntersectionMode ? (
+                <>Select a second node"</>
+              ) : (
+                <>Actions for "{selectedNode.data.label}"</>
+              )}
             </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {ACTIONS.map((action) => (
+            {!isIntersectionMode && (
+              <div className="grid grid-cols-2 gap-2">
+                {ACTIONS.map((action) => (
+                  <button
+                    key={action.type}
+                    onClick={() => handleAction(action.type)}
+                    className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    disabled={loading}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {isIntersectionMode && (
+              <div className="grid grid-cols-1 gap-2">
                 <button
-                  key={action.type}
-                  onClick={() => handleAction(action.type)}
+                  onClick={() => {
+                    setIsIntersectionMode(false);
+                    setSecondarySelectedNode(null);
+                  }}
                   className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  disabled={loading}
                 >
-                  {action.label}
+                  Cancel Intersection
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 

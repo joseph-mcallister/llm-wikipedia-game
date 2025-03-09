@@ -1,4 +1,4 @@
-export type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil' | 'things';
+export type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil' | 'things' | 'intersection';
 
 export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
   { 
@@ -57,6 +57,11 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     prompt: 'Respond ONLY with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
+    type: 'intersection', 
+    label: 'Intersection of',
+    prompt: 'Respond ONLY with {n} topics that are meaningfully connected to both "{topic1}" and "{topic2}", as a comma-separated list with no other text or punctuation. Example format: connection1, connection2, connection3, connection4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
+  },
+  { 
     type: 'surprise', 
     label: 'Surprise me',
     prompt: 'Respond ONLY with {n} surprising topic tangentially related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: surprise1, surprise2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
@@ -76,6 +81,7 @@ export const ACTION_COLORS: Record<ActionType, string> = {
   good: '#8BC34A',        // Light Green
   evil: '#607D8B',        // Blue Grey
   things: '#FFEB3B',      // Yellow
+  intersection: '#673AB7', // Deep Purple
 };
 
 export const MIN_NODE_DISTANCE = 100; // Minimum distance between nodes

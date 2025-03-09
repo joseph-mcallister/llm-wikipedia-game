@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  ChatCompletionSystemMessageParam,
-  ChatCompletionUserMessageParam,
-} from "@mlc-ai/web-llm";
 import ReactFlow, {
   Node,
   Edge,
@@ -21,6 +17,7 @@ import {
   ACTION_COLORS,
   MIN_NODE_DISTANCE,
 } from "../constants/wikipediaGame";
+import { generateResponse, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
 
 interface NodeData {
@@ -28,38 +25,6 @@ interface NodeData {
   isBold?: boolean;
   borderColor?: string;
 }
-
-const generateResponse = async (
-  engineInstance: NonNullable<ReturnType<typeof useLLM>["engineInstance"]>,
-  prompt: string
-) => {
-  try {
-    // Format the prompt as a chat message
-    const messages: (
-      | ChatCompletionSystemMessageParam
-      | ChatCompletionUserMessageParam
-    )[] = [
-      {
-        role: "system",
-        content:
-          "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
-      },
-      { role: "user", content: prompt },
-    ];
-
-    // Generate response
-    const response = await engineInstance.chat.completions.create({
-      messages,
-      temperature: 0.7,
-      max_tokens: 100,
-    });
-
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error("WebLLM error:", error);
-    throw error;
-  }
-};
 
 // Helper function to calculate distance between two points
 const distance = (x1: number, y1: number, x2: number, y2: number): number => {
@@ -483,52 +448,6 @@ export default function WikipediaGameBoard() {
     } finally {
       setLoading(false);
       setSelectedNode(null);
-    }
-  };
-
-  const parseResponse = (response: unknown, maxTopics: number): string[] => {
-    try {
-      // Helper to capitalize first letter
-      const capitalize = (str: string) =>
-        str.charAt(0).toUpperCase() + str.slice(1);
-
-      // Handle array response
-      if (Array.isArray(response)) {
-        const text = response[0]?.generated_text || "";
-        return text
-          .split(",")
-          .map((item: string) => capitalize(item.trim()))
-          .filter((item: string) => item.length > 0)
-          .slice(0, maxTopics);
-      }
-
-      // Handle string response
-      if (typeof response === "string") {
-        return response
-          .split(",")
-          .map((item: string) => capitalize(item.trim()))
-          .filter((item: string) => item.length > 0)
-          .slice(0, maxTopics);
-      }
-
-      // Handle object response
-      if (
-        response &&
-        typeof response === "object" &&
-        "generated_text" in response
-      ) {
-        const text = (response as { generated_text: string }).generated_text;
-        return text
-          .split(",")
-          .map((item: string) => capitalize(item.trim()))
-          .filter((item: string) => item.length > 0)
-          .slice(0, maxTopics);
-      }
-
-      return [];
-    } catch (err) {
-      console.error("Parse error:", err);
-      return [];
     }
   };
 

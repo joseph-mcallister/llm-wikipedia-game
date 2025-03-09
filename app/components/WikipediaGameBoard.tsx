@@ -33,6 +33,10 @@ interface PathStep {
   action: string;
 }
 
+interface EdgeData {
+  actionType: ActionType;
+}
+
 // Helper function to calculate distance between two points
 const distance = (x1: number, y1: number, x2: number, y2: number): number => {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
@@ -147,10 +151,11 @@ const isNeighborNode = (
   selectedNodeId: string,
   topic: string,
   nodes: Node[],
-  edges: Edge[]
+  edges: Edge<EdgeData>[],
+  actionType: ActionType
 ): boolean => {
-  // Find all nodes connected to the selected node
-  const neighborEdges = edges.filter((edge) => edge.source === selectedNodeId);
+  // Find all nodes connected to the selected node with the same action type
+  const neighborEdges = edges.filter((edge) => edge.source === selectedNodeId && edge.data?.actionType === actionType);
   const neighborNodeIds = neighborEdges.map((edge) => edge.target);
   const neighborNodes = nodes.filter((node) =>
     neighborNodeIds.includes(node.id)
@@ -162,9 +167,9 @@ const isNeighborNode = (
   );
 };
 
-// Helper function to get neighboring topics
-const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge[]): string[] => {
-  const neighborEdges = edges.filter((edge) => edge.source === nodeId);
+// Helper function to get neighboring topics by action type
+const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge<EdgeData>[], actionType: ActionType): string[] => {
+  const neighborEdges = edges.filter((edge) => edge.source === nodeId && edge.data?.actionType === actionType);
   const neighborNodeIds = neighborEdges.map((edge) => edge.target);
   return nodes
     .filter((node) => neighborNodeIds.includes(node.id))
@@ -172,7 +177,7 @@ const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge[]): str
 };
 
 // Helper function to find the winning path
-const findWinningPath = (nodes: Node[], edges: Edge[], endWord: string): PathStep[] => {
+const findWinningPath = (nodes: Node[], edges: Edge<EdgeData>[], endWord: string): PathStep[] => {
   const endNode = nodes.find(node => 
     node.data.label.toLowerCase().includes(endWord.toLowerCase())
   );
@@ -208,13 +213,10 @@ const findWinningPath = (nodes: Node[], edges: Edge[], endWord: string): PathSte
     const parentNode = nodes.find(n => n.id === parentEdge.source);
     if (!parentNode) break;
 
-    const edgeStyle = parentEdge.style?.stroke as string;
-    const action = Object.entries(ACTION_COLORS).find(([_, color]) => color === edgeStyle)?.[0] || "unknown";
-
     path.unshift({
       from: parentNode.data.label,
       to: currentNode.data.label,
-      action
+      action: parentEdge.data?.actionType || "unknown"
     });
     currentNode = parentNode;
   }
@@ -233,7 +235,7 @@ export default function WikipediaGameBoard() {
       position: { x: 0, y: 0 },
     },
   ]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<EdgeData>([]);
   const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
   const [isIntersectionMode, setIsIntersectionMode] = useState(false);
   const [secondarySelectedNode, setSecondarySelectedNode] = useState<Node<NodeData> | null>(null);
@@ -301,8 +303,8 @@ export default function WikipediaGameBoard() {
           topic.toLowerCase() !== firstNode.data.label.toLowerCase() &&
           topic.toLowerCase() !== secondNode.data.label.toLowerCase() &&
           topic.trim().length > 0 &&
-          !isNeighborNode(firstNode.id, topic, nodes, edges) &&
-          !isNeighborNode(secondNode.id, topic, nodes, edges)
+          !isNeighborNode(firstNode.id, topic, nodes, edges, 'intersection') &&
+          !isNeighborNode(secondNode.id, topic, nodes, edges, 'intersection')
       );
 
       if (!topics.length) {
@@ -342,7 +344,7 @@ export default function WikipediaGameBoard() {
         newNodes.push(newNode);
       });
 
-      const newEdges: Edge[] = newNodes.flatMap((node) => [
+      const newEdges: Edge<EdgeData>[] = newNodes.flatMap((node) => [
         {
           id: `e-${firstNode.id}-${node.id}`,
           source: firstNode.id,
@@ -352,6 +354,7 @@ export default function WikipediaGameBoard() {
             type: MarkerType.Arrow,
             color: ACTION_COLORS.intersection,
           },
+          data: { actionType: 'intersection' },
         },
         {
           id: `e-${secondNode.id}-${node.id}`,
@@ -362,6 +365,7 @@ export default function WikipediaGameBoard() {
             type: MarkerType.Arrow,
             color: ACTION_COLORS.intersection,
           },
+          data: { actionType: 'intersection' },
         },
       ]);
 
@@ -415,7 +419,7 @@ export default function WikipediaGameBoard() {
       const maxTopics = 4;
 
       // Get existing neighboring topics
-      const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges);
+      const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges, actionType);
       const existingTopicsStr = neighboringTopics.length 
         ? `You have already generated these topics: ${neighboringTopics.join(", ")}. Generate new topics.` 
         : "";
@@ -439,7 +443,7 @@ export default function WikipediaGameBoard() {
           (topic) =>
             topic.toLowerCase() !== selectedNode.data.label.toLowerCase() &&
             topic.trim().length > 0 &&
-            !isNeighborNode(selectedNode.id, topic, nodes, edges)
+            !isNeighborNode(selectedNode.id, topic, nodes, edges, actionType)
         );
 
         if (!topics.length) {
@@ -489,7 +493,7 @@ export default function WikipediaGameBoard() {
           newNodes.push(newNode);
         });
 
-        const newEdges: Edge[] = newNodes.map((node) => ({
+        const newEdges: Edge<EdgeData>[] = newNodes.map((node) => ({
           id: `e-${selectedNode.id}-${node.id}`,
           source: selectedNode.id,
           target: node.id,
@@ -498,6 +502,7 @@ export default function WikipediaGameBoard() {
             type: MarkerType.Arrow,
             color: ACTION_COLORS[actionType],
           },
+          data: { actionType },
         }));
 
         setNodes((nodes) => [...nodes, ...newNodes]);
@@ -554,7 +559,7 @@ export default function WikipediaGameBoard() {
             </>
           ) : (
             <>
-              Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "} 
+              Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "}
               <span className="font-bold text-pink-400">{endWord}</span>
               {" by tapping a topic"}
             </>

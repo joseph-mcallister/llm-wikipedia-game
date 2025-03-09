@@ -20,7 +20,8 @@ export function WebGPUProvider({ children }: { children: ReactNode }) {
         }
         const adapter = await navigator.gpu.requestAdapter();
         setIsSupported(!!adapter);
-      } catch {
+      } catch (err) {
+        console.error(err);
         setIsSupported(false);
       }
     };

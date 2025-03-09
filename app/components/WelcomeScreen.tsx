@@ -50,9 +50,8 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
       <WebGPUStatus />
       
       <div className="max-w-2xl text-center">
-        <h2 className="text-2xl font-bold mb-4">Welcome to the Wikipedia Game!</h2>
         <p className="text-lg mb-4">
-          This game requires downloading a ~1GB language model that will run directly in your browser.
+          This game requires downloading a ~1GB LLM that will run directly in your browser.
           The model will be cached for future visits.
         </p>
       </div>

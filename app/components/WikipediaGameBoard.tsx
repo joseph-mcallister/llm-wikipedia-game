@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   ChatCompletionSystemMessageParam,
   ChatCompletionUserMessageParam
@@ -14,85 +14,19 @@ import ReactFlow, {
   useEdgesState,
 } from 'reactflow';
 import { useLLM } from '../contexts/LLMContext';
+import { 
+  ActionType,
+  ACTIONS,
+  ACTION_COLORS,
+  MIN_NODE_DISTANCE,
+  MAX_PLACEMENT_ATTEMPTS
+} from '../constants/wikipediaGame';
 import 'reactflow/dist/style.css';
-
-type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil';
 
 interface NodeData {
   label: string;
+  isBold?: boolean;
 }
-
-const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
-  { 
-    type: 'expand', 
-    label: 'Expand',
-    prompt: 'Respond ONLY with {n} closely related topics to "{topic}", as a comma-separated list with no other text or punctuation. Example format: topic1, topic2, topic3, topic4. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'people', 
-    label: 'People',
-    prompt: 'Respond ONLY with {n} notable people closely associated with "{topic}", as a comma-separated list with no other text or punctuation. Example format: person1, person2, person3, person4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
-  },
-  { 
-    type: 'places', 
-    label: 'Places',
-    prompt: 'Respond ONLY with {n} significant places related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
-  },
-  { 
-    type: 'good', 
-    label: 'Good',
-    prompt: 'Respond ONLY with {n} "good" (as in opposite of evil) things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
-  },
-  { 
-    type: 'evil', 
-    label: 'Evil',
-    prompt: 'Respond ONLY with {n} "evil" things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
-  },
-  { 
-    type: 'opposite', 
-    label: 'Opposite of',
-    prompt: 'Respond ONLY with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'deeper', 
-    label: 'Go deeper',
-    prompt: 'Respond ONLY with {n} more specific subtopics of "{topic}", as a comma-separated list with no other text or punctuation. Example format: subtopic1, subtopic2, subtopic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'broader', 
-    label: 'Go broader',
-    prompt: 'Respond ONLY with {n} broader topics that encompass "{topic}", as a comma-separated list with no other text or punctuation. Example format: broader1, broader2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'timeForward', 
-    label: 'Time →',
-    prompt: 'Respond ONLY with {n} future developments related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: future1, future2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'timeBackward', 
-    label: 'Time ←',
-    prompt: 'Respond ONLY with {n} historical aspects of "{topic}", as a comma-separated list with no other text or punctuation. Example format: past1, past2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'surprise', 
-    label: 'Surprise me',
-    prompt: 'Respond ONLY with {n} surprising topic tangentially related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: surprise1, surprise2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-];
-
-const ACTION_COLORS: Record<ActionType, string> = {
-  expand: '#4CAF50',      // Green
-  opposite: '#F44336',    // Red
-  deeper: '#2196F3',      // Blue
-  broader: '#9C27B0',     // Purple
-  timeForward: '#FF9800', // Orange
-  timeBackward: '#795548',// Brown
-  surprise: '#E91E63',    // Pink
-  people: '#00BCD4',      // Cyan
-  places: '#FFEB3B',      // Yellow
-  good: '#8BC34A',        // Light Green
-  evil: '#607D8B',        // Blue Grey
-};
 
 const generateResponse = async (
   engineInstance: NonNullable<ReturnType<typeof useLLM>['engineInstance']>,
@@ -118,9 +52,6 @@ const generateResponse = async (
     throw error;
   }
 };
-
-const MIN_NODE_DISTANCE = 100; // Minimum distance between nodes
-const MAX_PLACEMENT_ATTEMPTS = 50; // Maximum number of attempts to place a node
 
 // Helper function to calculate distance between two points
 const distance = (x1: number, y1: number, x2: number, y2: number): number => {
@@ -187,7 +118,7 @@ export default function WikipediaGameBoard() {
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([{
     id: '0',
     type: 'default',
-    data: { label: 'USA' },
+    data: { label: 'USA', isBold: false },
     position: { x: 0, y: 0 },
   }]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -201,21 +132,33 @@ export default function WikipediaGameBoard() {
 
   const parseResponse = (response: unknown, maxTopics: number): string[] => {
     try {
+      // Helper to capitalize first letter
+      const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+
       // Handle array response
       if (Array.isArray(response)) {
         const text = response[0]?.generated_text || '';
-        return text.split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0).slice(0, maxTopics);
+        return text.split(',')
+          .map((item: string) => capitalize(item.trim()))
+          .filter((item: string) => item.length > 0)
+          .slice(0, maxTopics);
       }
       
       // Handle string response
       if (typeof response === 'string') {
-        return response.split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0).slice(0, maxTopics);
+        return response.split(',')
+          .map((item: string) => capitalize(item.trim()))
+          .filter((item: string) => item.length > 0)
+          .slice(0, maxTopics);
       }
       
       // Handle object response
       if (response && typeof response === 'object' && 'generated_text' in response) {
         const text = (response as { generated_text: string }).generated_text;
-        return text.split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0).slice(0, maxTopics);
+        return text.split(',')
+          .map((item: string) => capitalize(item.trim()))
+          .filter((item: string) => item.length > 0)
+          .slice(0, maxTopics);
       }
       
       return [];
@@ -258,6 +201,13 @@ export default function WikipediaGameBoard() {
           throw new Error('No topics generated');
         }
 
+        // First, unbold all existing nodes
+        setNodes(nodes => nodes.map(node => ({
+          ...node,
+          data: { ...node.data, isBold: false },
+          style: { fontWeight: 'normal' }
+        })));
+
         // Create new nodes and edges, skipping any that would create duplicate IDs
         const newNodes: Node[] = [];
         const timestamp = Date.now();
@@ -275,8 +225,9 @@ export default function WikipediaGameBoard() {
 
           const newNode = {
             id: nodeId,
-            data: { label: topic },
+            data: { label: topic, isBold: true },
             position,
+            style: { fontWeight: 'bold' }
           };
           
           newNodes.push(newNode);

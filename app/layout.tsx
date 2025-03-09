@@ -4,6 +4,8 @@ import "./globals.css";
 import { WebGPUProvider } from "./contexts/WebGPUContext";
 import { LLMProvider } from "./contexts/LLMContext";
 import { GameWordsProvider } from "./contexts/GameWordsContext";
+import { GoogleTagManager } from '@next/third-parties/google'
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <GoogleTagManager gtmId="GTM-54BT9D33" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -16,7 +16,7 @@ import {
   ACTIONS,
   ACTION_COLORS,
 } from "../constants/wikipediaGame";
-import { generateResponse, parseResponse } from "../utils/webLLM";
+import { generateResponse, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
 
 interface NodeData {

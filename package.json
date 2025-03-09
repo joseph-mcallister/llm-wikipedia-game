@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.4.0",
     "@mlc-ai/web-llm": "^0.2.78",
     "@next/third-parties": "^15.2.1",
     "next": "^15.2.1",

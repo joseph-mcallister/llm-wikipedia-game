@@ -5,7 +5,7 @@ import { useWebGPU } from '../contexts/WebGPUContext';
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from '../contexts/LLMContext';
 import WebGPUStatus from '../components/WebGPUStatus';
-import { LLMS } from '../utils/webLLM';
+import { LLMS } from '../utils/llm';
 
 interface WelcomeScreenProps {
   onGameStart: () => void;
@@ -57,14 +57,14 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
           value={selectedModel.id}
           onChange={(e) => setSelectedModel(LLMS.find(model => model.id === e.target.value) || LLMS[0])}
           className={`p-4 rounded-lg border border-black/[.08] dark:border-white/[.145] text-center bg-black ${!isSupported ? 'opacity-50' : ''} text-white`}
-          disabled={isLoading || (selectedModel.requiresWebGPU && !isSupported)}
+          disabled={isLoading || (selectedModel.type === "mlc" && !isSupported)}
         >
           {LLMS.map((model) => (
             <option 
               key={model.id} 
               value={model.id} 
               className="bg-black text-white"
-              disabled={model.requiresWebGPU && !isSupported}
+              disabled={model.type === "mlc" && !isSupported}
             >
               {model.name}
             </option>

@@ -3,35 +3,59 @@ import {
   ChatCompletionUserMessageParam,
   CreateMLCEngine,
 } from "@mlc-ai/web-llm";
+import { pipeline } from "@huggingface/transformers";
 
 interface LLM {
   id: string;
   name: string;
   downloadSize: string;
-  requiresWebGPU: boolean;
+  type: "mlc" | "onnx";
 }
 
-
-export const LLMS = [
+export const LLMS: LLM[] = [
   {
     id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",
     name: "Llama-3.2-1B (best)",
     downloadSize: "650 MB",
-    requiresWebGPU: true, 
+    type: "mlc",
   },
   {
     id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-    name: "Qwen-2.5-0.5B (smallest)",
+    name: "Qwen-2.5-0.5B ",
     downloadSize: "250 MB",
-    requiresWebGPU: false,
+    type: "mlc",
   },
+  {
+    id: "onnx-community/Qwen2.5-0.5B-Instruct",
+    name: "Qwen-2.5-0.5B (wasm)",
+    downloadSize: "250 MB",
+    type: "onnx",
+  }
 ];
+
+export const generateResponseWithoutWebGPU = async (prompt: string) => {
+  const chat = [
+    {"role": "system", "content": "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting."},
+    {"role": "user", "content": prompt}
+  ]
+  const pipe = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct")
+  const output = await pipe(chat, {
+    max_new_tokens: 100,
+    temperature: 0.7
+  });
+
+  console.log("NO WEB GPU:")
+  console.log(output);
+}
+
+
 
 export const generateResponse = async (
   engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,
   prompt: string
 ) => {
   try {
+    await generateResponseWithoutWebGPU(prompt);
     // Format the prompt as a chat message
     const messages: (
       | ChatCompletionSystemMessageParam

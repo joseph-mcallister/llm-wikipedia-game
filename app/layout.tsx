@@ -31,7 +31,11 @@ export default function RootLayout({
     <html lang="en">
       <GoogleTagManager gtmId="GTM-54BT9D33" />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`} 
+        style={{ // TODO: fix this hack for safari ios ignoring tailwind dark mode
+          background: "#0a0a0a",
+          color: "#ededed",
+        }}
       >
         <WebGPUProvider>
           <LLMProvider>

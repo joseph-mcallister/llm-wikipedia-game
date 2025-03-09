@@ -120,6 +120,57 @@ const generateResponse = async (
   }
 };
 
+const MIN_NODE_DISTANCE = 100; // Minimum distance between nodes
+const MAX_PLACEMENT_ATTEMPTS = 50; // Maximum number of attempts to place a node
+
+// Helper function to calculate distance between two points
+const distance = (x1: number, y1: number, x2: number, y2: number): number => {
+  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+};
+
+// Helper function to check if a position would cause collision with existing nodes
+const wouldCollide = (x: number, y: number, existingNodes: Node[], newNodes: Node[] = [], minDistance: number = MIN_NODE_DISTANCE): boolean => {
+  // Check collision with existing nodes
+  const collidesWithExisting = existingNodes.some(node => 
+    distance(x, y, node.position.x, node.position.y) < minDistance
+  );
+  
+  // Check collision with other new nodes being created
+  const collidesWithNew = newNodes.some(node =>
+    distance(x, y, node.position.x, node.position.y) < minDistance
+  );
+  
+  return collidesWithExisting || collidesWithNew;
+};
+
+// Helper function to find a valid position for a new node
+const findValidPosition = (
+  centerX: number, 
+  centerY: number, 
+  existingNodes: Node[],
+  newNodes: Node[] = [],
+  attempt: number = 0
+): { x: number; y: number } => {
+  // On each attempt, increase the radius to search in a wider area
+  const radius = MIN_NODE_DISTANCE * (1 + attempt * 0.2);
+  const angle = (Math.PI * 2 * attempt) / MAX_PLACEMENT_ATTEMPTS + Math.random() * 0.5;
+  
+  const x = centerX + Math.cos(angle) * radius;
+  const y = centerY + Math.sin(angle) * radius;
+  
+  if (attempt >= MAX_PLACEMENT_ATTEMPTS) {
+    // If we've tried too many times, just return this position
+    return { x, y };
+  }
+  
+  if (!wouldCollide(x, y, existingNodes, newNodes)) {
+    return { x, y };
+  }
+  
+  // Try again with an increased radius
+  return findValidPosition(centerX, centerY, existingNodes, newNodes, attempt + 1);
+};
+
 export default function WikipediaGameBoard() {
   const { engineInstance } = useLLM();
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([{
@@ -196,28 +247,37 @@ export default function WikipediaGameBoard() {
         }
 
         // Create new nodes and edges, skipping any that would create duplicate IDs
-        const newNodes: Node[] = topics.map((topic, index) => {
-          const nodeId = `${selectedNode.id}-${actionType}-${index}`;
+        const newNodes: Node[] = [];
+        
+        for (const topic of topics) {
+          const nodeId = `${selectedNode.id}-${actionType}-${newNodes.length}`;
           // Skip if node with this ID already exists
           if (nodes.some(n => n.id === nodeId)) {
-            return null;
+            continue;
           }
-          return {
+
+          // Find a valid position for the new node, considering both existing and new nodes
+          const position = findValidPosition(
+            selectedNode.position.x || 0,
+            selectedNode.position.y || 0,
+            nodes,
+            newNodes
+          );
+
+          const newNode = {
             id: nodeId,
             data: { label: topic },
-            position: {
-              x: (selectedNode.position.x || 0) + Math.cos(index * (2 * Math.PI / topics.length)) * 200,
-              y: (selectedNode.position.y || 0) + Math.sin(index * (2 * Math.PI / topics.length)) * 200,
-            },
+            position,
           };
-        }).filter((node): node is Node => node !== null);
+          
+          newNodes.push(newNode);
+        }
 
         const newEdges: Edge[] = newNodes.map(node => ({
           id: `e-${selectedNode.id}-${node.id}`,
           source: selectedNode.id,
           target: node.id,
           style: { stroke: ACTION_COLORS[actionType] },
-          // animated: true,
         }));
 
         setNodes(nodes => [...nodes, ...newNodes]);

@@ -16,7 +16,7 @@ import ReactFlow, {
 import { useLLM } from '../contexts/LLMContext';
 import 'reactflow/dist/style.css';
 
-type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise';
+type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil';
 
 interface NodeData {
   label: string;
@@ -26,7 +26,27 @@ const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
   { 
     type: 'expand', 
     label: 'Expand',
-    prompt: 'Respond ONLY with {n} closely related topics to "{topic}", as a comma-separated list with no other text or punctuation. Example format: topic1, topic2, topic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
+    prompt: 'Respond ONLY with {n} closely related topics to "{topic}", as a comma-separated list with no other text or punctuation. Example format: topic1, topic2, topic3, topic4. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
+  },
+  { 
+    type: 'people', 
+    label: 'People',
+    prompt: 'Respond ONLY with {n} notable people closely associated with "{topic}", as a comma-separated list with no other text or punctuation. Example format: person1, person2, person3, person4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
+  },
+  { 
+    type: 'places', 
+    label: 'Places',
+    prompt: 'Respond ONLY with {n} significant places related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
+  },
+  { 
+    type: 'good', 
+    label: 'Good',
+    prompt: 'Respond ONLY with {n} "good" (as in opposite of evil) things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
+  },
+  { 
+    type: 'evil', 
+    label: 'Evil',
+    prompt: 'Respond ONLY with {n} "evil" things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
   },
   { 
     type: 'opposite', 
@@ -59,6 +79,20 @@ const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     prompt: 'Respond ONLY with {n} surprising topic tangentially related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: surprise1, surprise2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
 ];
+
+const ACTION_COLORS: Record<ActionType, string> = {
+  expand: '#4CAF50',      // Green
+  opposite: '#F44336',    // Red
+  deeper: '#2196F3',      // Blue
+  broader: '#9C27B0',     // Purple
+  timeForward: '#FF9800', // Orange
+  timeBackward: '#795548',// Brown
+  surprise: '#E91E63',    // Pink
+  people: '#00BCD4',      // Cyan
+  places: '#FFEB3B',      // Yellow
+  good: '#8BC34A',        // Light Green
+  evil: '#607D8B',        // Blue Grey
+};
 
 const generateResponse = async (
   engineInstance: NonNullable<ReturnType<typeof useLLM>['engineInstance']>,
@@ -139,7 +173,7 @@ export default function WikipediaGameBoard() {
       const action = ACTIONS.find(a => a.type === actionType);
       if (!action) return;
 
-      const maxTopics = 3;
+      const maxTopics = 4;
 
       const prompt = action.prompt.replace('{topic}', selectedNode.data.label).replaceAll('{n}', maxTopics.toString());
       console.log('Sending prompt:', prompt);
@@ -148,27 +182,42 @@ export default function WikipediaGameBoard() {
         const result = await generateResponse(engineInstance, prompt);
         console.log('Raw LLM result:', result);
         
-        const topics = parseResponse(result, maxTopics);
+        let topics = parseResponse(result, maxTopics);
         console.log('Extracted topics:', topics);
         
+        // Filter out the selected node's label and any empty topics
+        topics = topics.filter(topic => 
+          topic.toLowerCase() !== selectedNode.data.label.toLowerCase() && 
+          topic.trim().length > 0
+        );
+
         if (!topics.length) {
-          throw new Error('No topics found in response');
+          throw new Error('No valid topics found in response');
         }
 
-        // Create new nodes and edges
-        const newNodes: Node[] = topics.map((topic, index) => ({
-          id: `${selectedNode.id}-${actionType}-${index}`,
-          data: { label: topic },
-          position: {
-            x: (selectedNode.position.x || 0) + Math.cos(index * (2 * Math.PI / topics.length)) * 200,
-            y: (selectedNode.position.y || 0) + Math.sin(index * (2 * Math.PI / topics.length)) * 200,
-          },
-        }));
+        // Create new nodes and edges, skipping any that would create duplicate IDs
+        const newNodes: Node[] = topics.map((topic, index) => {
+          const nodeId = `${selectedNode.id}-${actionType}-${index}`;
+          // Skip if node with this ID already exists
+          if (nodes.some(n => n.id === nodeId)) {
+            return null;
+          }
+          return {
+            id: nodeId,
+            data: { label: topic },
+            position: {
+              x: (selectedNode.position.x || 0) + Math.cos(index * (2 * Math.PI / topics.length)) * 200,
+              y: (selectedNode.position.y || 0) + Math.sin(index * (2 * Math.PI / topics.length)) * 200,
+            },
+          };
+        }).filter((node): node is Node => node !== null);
 
         const newEdges: Edge[] = newNodes.map(node => ({
           id: `e-${selectedNode.id}-${node.id}`,
           source: selectedNode.id,
           target: node.id,
+          style: { stroke: ACTION_COLORS[actionType] },
+          // animated: true,
         }));
 
         setNodes(nodes => [...nodes, ...newNodes]);

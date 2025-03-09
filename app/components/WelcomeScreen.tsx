@@ -46,7 +46,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8 p-8">
+    <div className="flex flex-col items-center justify-top min-h-[80vh] gap-8 p-8">
       <WebGPUStatus />
       
       <div className="max-w-2xl text-center">

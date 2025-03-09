@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useWebGPU } from '../contexts/WebGPUContext';
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from '../contexts/LLMContext';
-import WebGPUStatus from './WebGPUStatus';
+import WebGPUStatus from '../components/WebGPUStatus';
 
 interface WelcomeScreenProps {
   onGameStart: () => void;

@@ -1,4 +1,4 @@
-import WikipediaGame from "./components/WikipediaGame";
+import GameScreen from "./screens/GameScreen";
 
 export default function Home() {
   return (
@@ -7,7 +7,7 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center">The Wikipedia Game...but with LLMs</h1>
       </header>
       <main className="w-full">
-        <WikipediaGame />
+        <GameScreen />
       </main>
     </div>
   );

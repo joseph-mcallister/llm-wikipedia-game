@@ -6,12 +6,11 @@ import ReactFlow, {
   Edge,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
   MarkerType,
 } from "reactflow";
 import { useLLM } from "../contexts/LLMContext";
 import { useGameWords } from "../contexts/GameWordsContext";
+import { useNodes } from "../contexts/NodeContext";
 import {
   ActionType,
   ACTIONS,
@@ -37,205 +36,22 @@ interface EdgeData {
   actionType: ActionType;
 }
 
-// Helper function to calculate distance between two points
-const distance = (x1: number, y1: number, x2: number, y2: number): number => {
-  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-};
-
-// Helper function to check if a position would cause collision with existing nodes
-const wouldCollide = (
-  x: number,
-  y: number,
-  existingNodes: Node[],
-  newNodes: Node[] = [],
-  minDistance: number = MIN_NODE_DISTANCE
-): boolean => {
-  // Check collision with existing nodes
-  const collidesWithExisting = existingNodes.some(
-    (node) => distance(x, y, node.position.x, node.position.y) < minDistance
-  );
-
-  // Check collision with other new nodes being created
-  const collidesWithNew = newNodes.some(
-    (node) => distance(x, y, node.position.x, node.position.y) < minDistance
-  );
-
-  return collidesWithExisting || collidesWithNew;
-};
-
-// Helper function to check if a direction has enough space for all nodes
-const checkDirectionSpace = (
-  centerX: number,
-  centerY: number,
-  angle: number,
-  nodeCount: number,
-  existingNodes: Node[],
-  minDistance: number = MIN_NODE_DISTANCE
-): boolean => {
-  const radius = minDistance * 1.2; // Slightly larger than minimum to ensure no overlap
-  
-  for (let i = 0; i < nodeCount; i++) {
-    const offset = (i - (nodeCount - 1) / 2) * radius;
-    const x = centerX + Math.cos(angle) * radius;
-    const y = centerY + Math.sin(angle) * radius + offset;
-    
-    if (wouldCollide(x, y, existingNodes, [], minDistance)) {
-      return false;
-    }
-  }
-  return true;
-};
-
-// Helper function to find valid positions for a group of nodes
-const findValidPositions = (
-  centerX: number,
-  centerY: number,
-  nodeCount: number,
-  existingNodes: Node[],
-): { x: number; y: number }[] => {
-  const positions: { x: number; y: number }[] = [];
-  const directions = [0, Math.PI/2, Math.PI, 3*Math.PI/2]; // Try right, down, left, up
-  
-  // First try to find a direction where all nodes fit
-  for (const angle of directions) {
-    if (checkDirectionSpace(centerX, centerY, angle, nodeCount, existingNodes)) {
-      const radius = MIN_NODE_DISTANCE * 1.2;
-      
-      // Place all nodes in this direction
-      for (let i = 0; i < nodeCount; i++) {
-        const offset = (i - (nodeCount - 1) / 2) * radius;
-        positions.push({
-          x: centerX + Math.cos(angle) * radius,
-          y: centerY + Math.sin(angle) * radius + offset
-        });
-      }
-      return positions;
-    }
-  }
-
-  // If no direction fits all nodes, use spiral placement
-  const placedNodes: Node[] = [];
-  const baseRadius = MIN_NODE_DISTANCE * 1.2;
-  let angle = 0;
-  let radiusMultiplier = 1;
-  let attemptsPerRadius = 8;
-
-  while (positions.length < nodeCount) {
-    // Try positions in a spiral pattern
-    for (let i = 0; i < attemptsPerRadius && positions.length < nodeCount; i++) {
-      const x = centerX + Math.cos(angle) * (baseRadius * radiusMultiplier);
-      const y = centerY + Math.sin(angle) * (baseRadius * radiusMultiplier);
-
-      // Check if this position would collide with any existing nodes or already placed nodes
-      if (!wouldCollide(x, y, existingNodes, placedNodes)) {
-        positions.push({ x, y });
-        placedNodes.push({
-          id: `temp-${positions.length}`,
-          position: { x, y },
-          data: { label: "" }
-        });
-      }
-
-      angle += (2 * Math.PI) / attemptsPerRadius;
-    }
-
-    // Increase radius and number of attempts for next spiral
-    radiusMultiplier += 0.5;
-    attemptsPerRadius += 4;
-  }
-
-  return positions;
-};
-
-const isNeighborNode = (
-  selectedNodeId: string,
-  topic: string,
-  nodes: Node[],
-  edges: Edge<EdgeData>[],
-  actionType: ActionType
-): boolean => {
-  // Find all nodes connected to the selected node with the same action type
-  const neighborEdges = edges.filter((edge) => edge.source === selectedNodeId && edge.data?.actionType === actionType);
-  const neighborNodeIds = neighborEdges.map((edge) => edge.target);
-  const neighborNodes = nodes.filter((node) =>
-    neighborNodeIds.includes(node.id)
-  );
-
-  // Check if any neighbor node has the same topic (case insensitive)
-  return neighborNodes.some(
-    (node) => node.data.label.toLowerCase() === topic.toLowerCase()
-  );
-};
-
-// Helper function to get neighboring topics by action type
-const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge<EdgeData>[], actionType: ActionType): string[] => {
-  const neighborEdges = edges.filter((edge) => edge.source === nodeId && edge.data?.actionType === actionType);
-  const neighborNodeIds = neighborEdges.map((edge) => edge.target);
-  return nodes
-    .filter((node) => neighborNodeIds.includes(node.id))
-    .map((node) => node.data.label);
-};
-
-// Helper function to find the winning path
-const findWinningPath = (nodes: Node[], edges: Edge<EdgeData>[], endWord: string): PathStep[] => {
-  const endNode = nodes.find(node => 
-    node.data.label.toLowerCase().includes(endWord.toLowerCase())
-  );
-  if (!endNode) return [];
-
-  const path: PathStep[] = [];
-  let currentNode = endNode;
-  
-  while (currentNode) {
-    // Find incoming edges to current node
-    const incomingEdges = edges.filter(edge => edge.target === currentNode.id);
-    if (incomingEdges.length === 0) break;
-
-    // For intersection nodes, find both parent nodes
-    if (incomingEdges.length === 2) {
-      const [edge1, edge2] = incomingEdges;
-      const parent1 = nodes.find(n => n.id === edge1.source);
-      const parent2 = nodes.find(n => n.id === edge2.source);
-      if (parent1 && parent2) {
-        path.unshift({
-          from: `${parent1.data.label} and ${parent2.data.label}`,
-          to: currentNode.data.label,
-          action: "intersection"
-        });
-        // Continue from the first parent
-        currentNode = parent1;
-        continue;
-      }
-    }
-
-    // For regular nodes
-    const parentEdge = incomingEdges[0];
-    const parentNode = nodes.find(n => n.id === parentEdge.source);
-    if (!parentNode) break;
-
-    path.unshift({
-      from: parentNode.data.label,
-      to: currentNode.data.label,
-      action: parentEdge.data?.actionType || "unknown"
-    });
-    currentNode = parentNode;
-  }
-
-  return path;
-};
-
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
   const { engineInstance } = useLLM();
-  const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([
-    {
-      id: "0",
-      type: "default",
-      data: { label: startWord, isBold: false },
-      position: { x: 0, y: 0 },
-    },
-  ]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<EdgeData>([]);
+  const { 
+    nodes, 
+    edges, 
+    setNodes, 
+    setEdges, 
+    onNodesChange, 
+    onEdgesChange,
+    findValidPositions,
+    isNeighborNode,
+    getNeighboringTopics,
+    findWinningPath,
+  } = useNodes();
+  
   const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
   const [isIntersectionMode, setIsIntersectionMode] = useState(false);
   const [secondarySelectedNode, setSecondarySelectedNode] = useState<Node<NodeData> | null>(null);
@@ -246,7 +62,6 @@ export default function WikipediaGameBoard() {
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     if (isIntersectionMode && selectedNode) {
-      // Don't allow selecting the same node
       if (node.id === selectedNode.id) {
         return;
       }
@@ -275,7 +90,6 @@ export default function WikipediaGameBoard() {
     navigator.clipboard.writeText(pathText);
   };
 
-  // Add new function to handle intersection
   const handleIntersection = async (firstNode: Node<NodeData>, secondNode: Node<NodeData>) => {
     if (!engineInstance) return;
 
@@ -297,7 +111,6 @@ export default function WikipediaGameBoard() {
       const result = await generateResponse(engineInstance, prompt);
       let topics = parseResponse(result, maxTopics);
 
-      // Filter out topics that are the same as either selected node or are already neighbors
       topics = topics.filter(
         (topic) =>
           topic.toLowerCase() !== firstNode.data.label.toLowerCase() &&
@@ -311,14 +124,11 @@ export default function WikipediaGameBoard() {
         throw new Error("No intersection topics generated");
       }
 
-      // Calculate midpoint between the two nodes for new node placement
       const centerX = (firstNode.position.x + secondNode.position.x) / 2;
       const centerY = (firstNode.position.y + secondNode.position.y) / 2;
 
-      // Get positions for all new nodes
       const positions = findValidPositions(centerX, centerY, topics.length, nodes);
 
-      // Create new nodes and edges
       const newNodes: Node[] = [];
       const timestamp = Date.now();
 
@@ -370,22 +180,18 @@ export default function WikipediaGameBoard() {
       ]);
 
       setNodes((nodes) => {
-        // First unbold all nodes
         const unbolded = nodes.map((node) => ({
           ...node,
           data: { ...node.data, isBold: false, borderColor: undefined },
           style: { fontWeight: "normal", border: 'none', padding: '8px' },
         }));
-        // Then add new nodes
         return [...unbolded, ...newNodes];
       });
       
       setEdges((edges) => [...edges, ...newEdges]);
 
-      // Check if any of the new nodes contains the target word
       if (topics.some((topic) => topic.toLowerCase().includes(endWord.toLowerCase()))) {
         setHasWon(true);
-        // Find and set the winning path
         const updatedNodes = [...nodes, ...newNodes];
         const updatedEdges = [...edges, ...newEdges];
         const path = findWinningPath(updatedNodes, updatedEdges, endWord);
@@ -418,7 +224,6 @@ export default function WikipediaGameBoard() {
 
       const maxTopics = 4;
 
-      // Get existing neighboring topics
       const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges, actionType);
       const existingTopicsStr = neighboringTopics.length 
         ? `You have already generated these topics: ${neighboringTopics.join(", ")}. Generate new topics.` 
@@ -438,7 +243,6 @@ export default function WikipediaGameBoard() {
         let topics = parseResponse(result, maxTopics);
         console.log("Extracted topics:", topics);
 
-        // Filter out the selected node's label and any topics that are already neighbors
         topics = topics.filter(
           (topic) =>
             topic.toLowerCase() !== selectedNode.data.label.toLowerCase() &&
@@ -450,7 +254,6 @@ export default function WikipediaGameBoard() {
           throw new Error("No topics generated");
         }
 
-        // First, unbold all existing nodes
         setNodes((nodes) =>
           nodes.map((node) => ({
             ...node,
@@ -459,7 +262,6 @@ export default function WikipediaGameBoard() {
           }))
         );
 
-        // Get positions for all new nodes
         const positions = findValidPositions(
           selectedNode.position.x,
           selectedNode.position.y,
@@ -467,7 +269,6 @@ export default function WikipediaGameBoard() {
           nodes
         );
 
-        // Create new nodes and edges
         const newNodes: Node[] = [];
         const timestamp = Date.now();
 
@@ -508,14 +309,12 @@ export default function WikipediaGameBoard() {
         setNodes((nodes) => [...nodes, ...newNodes]);
         setEdges((edges) => [...edges, ...newEdges]);
 
-        // Check if any of the new nodes contains the target word
         if (
           topics.some((topic) =>
             topic.toLowerCase().includes(endWord.toLowerCase())
           )
         ) {
           setHasWon(true);
-          // Find and set the winning path
           const updatedNodes = [...nodes, ...newNodes];
           const updatedEdges = [...edges, ...newEdges];
           const path = findWinningPath(updatedNodes, updatedEdges, endWord);
@@ -581,7 +380,6 @@ export default function WikipediaGameBoard() {
           <Controls />
         </ReactFlow>
 
-        {/* Action Menu */}
         {selectedNode && !loading && (
           <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
             <h3 className="text-lg mb-2 text-gray-900">
@@ -621,7 +419,6 @@ export default function WikipediaGameBoard() {
           </div>
         )}
 
-        {/* Loading and Error States */}
         {loading && (
           <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg">
             <div className="text-gray-600">Loading...</div>

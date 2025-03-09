@@ -3,7 +3,6 @@ import {
   ChatCompletionUserMessageParam,
   CreateMLCEngine,
 } from "@mlc-ai/web-llm";
-import { pipeline, TextGenerationPipeline } from "@huggingface/transformers";
 
 interface Model {
   id: string;
@@ -25,46 +24,28 @@ export const MODELS: Model[] = [
     downloadSize: "250 MB",
     type: "mlc",
   },
-  {
-    id: "onnx-community/Qwen2.5-0.5B-Instruct",
-    name: "Qwen-2.5-0.5B (wasm)",
-    downloadSize: "250 MB",
-    type: "transformers.js",
-  },
-  {
-    id: "onnx-community/Llama-3.2-1B-Instruct",
-    name: "Llama-3.2-1B (best wasm)",
-    downloadSize: "650 MB",
-    type: "transformers.js",
-  },
-  {
-    "id": "onnx-community/Qwen2-VL-2B-Instruct",
-    "name": "Qwen-2-VL-2B (best wasm)",
-    "downloadSize": "650 MB",
-    "type": "transformers.js"
-  }
 ];
 
-export const generateResponseWithWasm = async (prompt: string, pipe: (prompt: any, options: any) => TextGenerationPipeline) => {
-  const messages = [
-    { role: "system", content: "You are an AI assistant that responds ONLY with comma-separated lists of topics" },
-    { role: "user", content: prompt }
-  ];
-  console.log(messages)
-  try {
-    const output= await pipe(messages, {
-      max_new_tokens: 20,
-      temperature: 0.7
-    }) as any;
-    console.log(output)
-    const text = output[0].generated_text[2].content;
-    console.log(text)
-    return text;
-  } catch (error) {
-    console.error("WebLLM error:", error);
-    throw error;
-  }
-}
+// export const generateResponseWithWasm = async (prompt: string, pipe: (prompt: any, options: any) => TextGenerationPipeline) => {
+//   const messages = [
+//     { role: "system", content: "You are an AI assistant that responds ONLY with comma-separated lists of topics" },
+//     { role: "user", content: prompt }
+//   ];
+//   console.log(messages)
+//   try {
+//     const output= await pipe(messages, {
+//       max_new_tokens: 20,
+//       temperature: 0.7
+//     }) as any;
+//     console.log(output)
+//     const text = output[0].generated_text[2].content;
+//     console.log(text)
+//     return text;
+//   } catch (error) {
+//     console.error("WebLLM error:", error);
+//     throw error;
+//   }
+// }
 
 export const generateResponseWithMLC = async (
   engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,

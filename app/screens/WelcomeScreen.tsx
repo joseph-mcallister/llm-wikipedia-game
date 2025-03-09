@@ -6,7 +6,6 @@ import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from "../contexts/LLMContext";
 import WebGPUStatus from "../components/WebGPUStatus";
 import { MODELS } from "../utils/llm";
-import { pipeline, TextGenerationPipeline } from "@huggingface/transformers";
 
 interface WelcomeScreenProps {
   onGameStart: () => void;
@@ -14,7 +13,7 @@ interface WelcomeScreenProps {
 
 export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const { isSupported } = useWebGPU();
-  const { engineInstance, setEngineInstance, setPipeInstance, pipeInstance } =
+  const { engineInstance, setEngineInstance } =
     useLLM();
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<InitProgressReport | null>(null);
@@ -35,13 +34,13 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
 
     try {
       if (selectedModel.type === "transformers.js") {
-        if (!pipeInstance) {
-          const pipe = await pipeline(
-            "text-generation",
-            "onnx-community/Qwen2.5-0.5B-Instruct"
-          ) as TextGenerationPipeline;
-          setPipeInstance(() => pipe);
-        }
+        // if (!pipeInstance) {
+        //   const pipe = await pipeline(
+        //     "text-generation",
+        //     "onnx-community/Qwen2.5-0.5B-Instruct"
+        //   ) as TextGenerationPipeline;
+        //   setPipeInstance(() => pipe);
+        // }
       } else {
         if (!engineInstance) {
           const engine = await CreateMLCEngine(selectedModel.id, {

@@ -16,7 +16,7 @@ import {
   ACTIONS,
   ACTION_COLORS,
 } from "../constants/wikipediaGame";
-import { generateResponseWithMLC, generateResponseWithWasm, parseResponse } from "../utils/llm";
+import { generateResponseWithMLC, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
 
 interface NodeData {
@@ -37,7 +37,7 @@ interface EdgeData {
 
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
-  const { engineInstance, pipeInstance } = useLLM();
+  const { engineInstance } = useLLM();
   const { 
     nodes, 
     edges, 
@@ -60,10 +60,7 @@ export default function WikipediaGameBoard() {
   const [winningPath, setWinningPath] = useState<PathStep[]>([]);
 
   const generateResponse = async (prompt: string) => {
-    if (pipeInstance) {
-      const result = await generateResponseWithWasm(prompt, pipeInstance);
-      return result;
-    } else if (engineInstance) {
+    if (engineInstance) {
       const result = await generateResponseWithMLC(engineInstance, prompt);
       return result;
     } else {

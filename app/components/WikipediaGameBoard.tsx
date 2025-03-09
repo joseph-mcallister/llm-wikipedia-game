@@ -484,7 +484,7 @@ export default function WikipediaGameBoard() {
           <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
             <h3 className="text-lg font-semibold mb-2 text-gray-900">
               {isIntersectionMode ? (
-                <>Select a second node"</>
+                <>Select a second node</>
               ) : (
                 <>Actions for "{selectedNode.data.label}"</>
               )}

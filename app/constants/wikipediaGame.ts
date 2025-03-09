@@ -1,4 +1,4 @@
-export type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil';
+export type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil' | 'things';
 
 export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
   { 
@@ -17,6 +17,11 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     prompt: 'Respond ONLY with {n} significant places related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
   },
   { 
+    type: 'things', 
+    label: 'Things',
+    prompt: 'Respond ONLY with {n} significant things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
+  },
+  { 
     type: 'good', 
     label: 'Good',
     prompt: 'Respond ONLY with {n} "good" (as in opposite of evil) things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
@@ -27,18 +32,13 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     prompt: 'Respond ONLY with {n} "evil" things related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
   },
   { 
-    type: 'opposite', 
-    label: 'Opposite of',
-    prompt: 'Respond ONLY with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
     type: 'deeper', 
-    label: 'Go deeper',
+    label: 'Deeper',
     prompt: 'Respond ONLY with {n} more specific subtopics of "{topic}", as a comma-separated list with no other text or punctuation. Example format: subtopic1, subtopic2, subtopic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
     type: 'broader', 
-    label: 'Go broader',
+    label: 'Broader',
     prompt: 'Respond ONLY with {n} broader topics that encompass "{topic}", as a comma-separated list with no other text or punctuation. Example format: broader1, broader2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
@@ -50,6 +50,11 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     type: 'timeBackward', 
     label: 'Time ←',
     prompt: 'Respond ONLY with {n} historical aspects of "{topic}", as a comma-separated list with no other text or punctuation. Example format: past1, past2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
+  },
+  { 
+    type: 'opposite', 
+    label: 'Opposite of',
+    prompt: 'Respond ONLY with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
     type: 'surprise', 
@@ -70,6 +75,7 @@ export const ACTION_COLORS: Record<ActionType, string> = {
   places: '#FFEB3B',      // Yellow
   good: '#8BC34A',        // Light Green
   evil: '#607D8B',        // Blue Grey
+  things: '#FFEB3B',      // Yellow
 };
 
 export const MIN_NODE_DISTANCE = 100; // Minimum distance between nodes

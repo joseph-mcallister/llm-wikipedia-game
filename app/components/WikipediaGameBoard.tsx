@@ -456,8 +456,9 @@ export default function WikipediaGameBoard() {
             <>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{startWord}</span> to <span className="font-bold text-pink-400">{endWord}</span>! 🎉</>
           ) : (
             <>
-              Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "}
+              Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "} 
               <span className="font-bold text-pink-400">{endWord}</span>
+              {" by tapping a topic"}
             </>
           )}
         </p>

@@ -86,39 +86,88 @@ const wouldCollide = (
   return collidesWithExisting || collidesWithNew;
 };
 
-// Helper function to find a valid position for a new node
-const findValidPosition = (
+// Helper function to check if a direction has enough space for all nodes
+const checkDirectionSpace = (
   centerX: number,
   centerY: number,
+  angle: number,
+  nodeCount: number,
   existingNodes: Node[],
-  newNodes: Node[] = [],
-  attempt: number = 0
-): { x: number; y: number } => {
-  // On each attempt, increase the radius to search in a wider area
-  const radius = MIN_NODE_DISTANCE * (1 + attempt * 0.2);
-  const angle =
-    (Math.PI * 2 * attempt) / MAX_PLACEMENT_ATTEMPTS + Math.random() * 0.5;
+  minDistance: number = MIN_NODE_DISTANCE
+): boolean => {
+  const radius = minDistance * 1.2; // Slightly larger than minimum to ensure no overlap
+  
+  for (let i = 0; i < nodeCount; i++) {
+    const offset = (i - (nodeCount - 1) / 2) * radius;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius + offset;
+    
+    if (wouldCollide(x, y, existingNodes, [], minDistance)) {
+      return false;
+    }
+  }
+  return true;
+};
 
-  const x = centerX + Math.cos(angle) * radius;
-  const y = centerY + Math.sin(angle) * radius;
-
-  if (attempt >= MAX_PLACEMENT_ATTEMPTS) {
-    // If we've tried too many times, just return this position
-    return { x, y };
+// Helper function to find valid positions for a group of nodes
+const findValidPositions = (
+  centerX: number,
+  centerY: number,
+  nodeCount: number,
+  existingNodes: Node[],
+): { x: number; y: number }[] => {
+  const positions: { x: number; y: number }[] = [];
+  const directions = [0, Math.PI/2, Math.PI, 3*Math.PI/2]; // Try right, down, left, up
+  
+  // First try to find a direction where all nodes fit
+  for (const angle of directions) {
+    if (checkDirectionSpace(centerX, centerY, angle, nodeCount, existingNodes)) {
+      const radius = MIN_NODE_DISTANCE * 1.2;
+      
+      // Place all nodes in this direction
+      for (let i = 0; i < nodeCount; i++) {
+        const offset = (i - (nodeCount - 1) / 2) * radius;
+        positions.push({
+          x: centerX + Math.cos(angle) * radius,
+          y: centerY + Math.sin(angle) * radius + offset
+        });
+      }
+      return positions;
+    }
   }
 
-  if (!wouldCollide(x, y, existingNodes, newNodes)) {
-    return { x, y };
+  // If no direction fits all nodes, use spiral placement
+  const placedNodes: Node[] = [];
+  const baseRadius = MIN_NODE_DISTANCE * 1.2;
+  let angle = 0;
+  let radiusMultiplier = 1;
+  let attemptsPerRadius = 8;
+
+  while (positions.length < nodeCount) {
+    // Try positions in a spiral pattern
+    for (let i = 0; i < attemptsPerRadius && positions.length < nodeCount; i++) {
+      const x = centerX + Math.cos(angle) * (baseRadius * radiusMultiplier);
+      const y = centerY + Math.sin(angle) * (baseRadius * radiusMultiplier);
+
+      // Check if this position would collide with any existing nodes or already placed nodes
+      if (!wouldCollide(x, y, existingNodes, placedNodes)) {
+        positions.push({ x, y });
+        placedNodes.push({
+          id: `temp-${positions.length}`,
+          position: { x, y },
+          data: { label: "" }
+        });
+      }
+
+      angle += (2 * Math.PI) / attemptsPerRadius;
+    }
+
+    // Increase radius and number of attempts for next spiral
+    radiusMultiplier += 0.5;
+    attemptsPerRadius += 4;
   }
 
-  // Try again with an increased radius
-  return findValidPosition(
-    centerX,
-    centerY,
-    existingNodes,
-    newNodes,
-    attempt + 1
-  );
+  return positions;
 };
 
 const isNeighborNode = (
@@ -232,13 +281,16 @@ export default function WikipediaGameBoard() {
       const centerX = (firstNode.position.x + secondNode.position.x) / 2;
       const centerY = (firstNode.position.y + secondNode.position.y) / 2;
 
+      // Get positions for all new nodes
+      const positions = findValidPositions(centerX, centerY, topics.length, nodes);
+
       // Create new nodes and edges
       const newNodes: Node[] = [];
       const timestamp = Date.now();
 
-      for (const topic of topics) {
-        const nodeId = `intersection-${timestamp}-${newNodes.length}`;
-        const position = findValidPosition(centerX, centerY, nodes, newNodes);
+      topics.forEach((topic, index) => {
+        const nodeId = `intersection-${timestamp}-${index}`;
+        const position = positions[index];
 
         const newNode = {
           id: nodeId,
@@ -248,7 +300,7 @@ export default function WikipediaGameBoard() {
         };
 
         newNodes.push(newNode);
-      }
+      });
 
       const newEdges: Edge[] = newNodes.flatMap((node) => [
         {
@@ -350,20 +402,21 @@ export default function WikipediaGameBoard() {
           }))
         );
 
-        // Create new nodes and edges, skipping any that would create duplicate IDs
+        // Get positions for all new nodes
+        const positions = findValidPositions(
+          selectedNode.position.x,
+          selectedNode.position.y,
+          topics.length,
+          nodes
+        );
+
+        // Create new nodes and edges
         const newNodes: Node[] = [];
         const timestamp = Date.now();
 
-        for (const topic of topics) {
-          const nodeId = `${selectedNode.id}-${actionType}-${timestamp}-${newNodes.length}`;
-
-          // Find a valid position for the new node, considering both existing and new nodes
-          const position = findValidPosition(
-            selectedNode.position.x || 0,
-            selectedNode.position.y || 0,
-            nodes,
-            newNodes
-          );
+        topics.forEach((topic, index) => {
+          const nodeId = `${selectedNode.id}-${actionType}-${timestamp}-${index}`;
+          const position = positions[index];
 
           const newNode = {
             id: nodeId,
@@ -373,7 +426,7 @@ export default function WikipediaGameBoard() {
           };
 
           newNodes.push(newNode);
-        }
+        });
 
         const newEdges: Edge[] = newNodes.map((node) => ({
           id: `e-${selectedNode.id}-${node.id}`,

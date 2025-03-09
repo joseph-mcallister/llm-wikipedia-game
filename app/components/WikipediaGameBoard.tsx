@@ -140,6 +140,15 @@ const isNeighborNode = (
   );
 };
 
+// Helper function to get neighboring topics
+const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge[]): string[] => {
+  const neighborEdges = edges.filter((edge) => edge.source === nodeId);
+  const neighborNodeIds = neighborEdges.map((edge) => edge.target);
+  return nodes
+    .filter((node) => neighborNodeIds.includes(node.id))
+    .map((node) => node.data.label);
+};
+
 export default function WikipediaGameBoard() {
   const { engineInstance } = useLLM();
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([
@@ -221,9 +230,17 @@ export default function WikipediaGameBoard() {
 
       const maxTopics = 4;
 
+      // Get existing neighboring topics
+      const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges);
+      const existingTopicsStr = neighboringTopics.length 
+        ? `You have already generated these topics: ${neighboringTopics.join(", ")}. Generate new topics.` 
+        : "";
+
       const prompt = action.prompt
         .replace("{topic}", selectedNode.data.label)
-        .replaceAll("{n}", maxTopics.toString());
+        .replaceAll("{n}", maxTopics.toString())
+        + " " + existingTopicsStr;
+
       console.log("Sending prompt:", prompt);
 
       try {

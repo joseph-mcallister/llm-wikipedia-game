@@ -24,15 +24,13 @@ const GameWordsContext = createContext<GameWordsContextType | null>(null);
 
 export function GameWordsProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
-  const startParam = searchParams.get('start');
-  const endParam = searchParams.get('end');
 
   let startWord: string;
   let endWord: string;
 
-  if (startParam && endParam) {
-    startWord = startParam;
-    endWord = endParam;
+  if (searchParams?.has('start') && searchParams?.has('end')) {
+    startWord = searchParams.get('start') as string;
+    endWord = searchParams.get('end') as string;
   } else {
     const today = new Date().toISOString().split('T')[0];
     [startWord, endWord] = DAILY_WORDS[today] || DEFAULT_WORDS;

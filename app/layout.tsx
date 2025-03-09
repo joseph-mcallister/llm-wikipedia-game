@@ -5,6 +5,7 @@ import { WebGPUProvider } from "./contexts/WebGPUContext";
 import { LLMProvider } from "./contexts/LLMContext";
 import { GameWordsProvider } from "./contexts/GameWordsContext";
 import { GoogleTagManager } from '@next/third-parties/google'
+import { Suspense } from "react";
 
 
 const geistSans = Geist({
@@ -37,13 +38,15 @@ export default function RootLayout({
           color: "#ededed",
         }}
       >
-        <WebGPUProvider>
-          <LLMProvider>
-            <GameWordsProvider>
-              {children}
-            </GameWordsProvider>
-          </LLMProvider>
-        </WebGPUProvider>
+        <Suspense>  
+          <WebGPUProvider>
+            <LLMProvider>
+              <GameWordsProvider>
+                {children}
+              </GameWordsProvider>
+            </LLMProvider>
+          </WebGPUProvider>
+          </Suspense>
       </body>
     </html>
   );

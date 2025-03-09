@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WebGPUProvider } from "./contexts/WebGPUContext";
 import { LLMProvider } from "./contexts/LLMContext";
+import { GameWordsProvider } from "./contexts/GameWordsContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,9 @@ export default function RootLayout({
       >
         <WebGPUProvider>
           <LLMProvider>
-            {children}
+            <GameWordsProvider>
+              {children}
+            </GameWordsProvider>
           </LLMProvider>
         </WebGPUProvider>
       </body>

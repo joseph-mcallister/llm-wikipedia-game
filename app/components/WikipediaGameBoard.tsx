@@ -11,6 +11,7 @@ import ReactFlow, {
   MarkerType,
 } from "reactflow";
 import { useLLM } from "../contexts/LLMContext";
+import { useGameWords } from "../contexts/GameWordsContext";
 import {
   ActionType,
   ACTIONS,
@@ -165,17 +166,13 @@ const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge[]): str
 };
 
 export default function WikipediaGameBoard() {
-  // const START_WORD = "USA";
-  // const TARGET_WORD = "Satya Nadella";
-  const START_WORD = "Egyptian pyramids";
-  const TARGET_WORD = "Joe Rogan";
-
+  const { startWord, endWord } = useGameWords();
   const { engineInstance } = useLLM();
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([
     {
       id: "0",
       type: "default",
-      data: { label: START_WORD, isBold: false },
+      data: { label: startWord, isBold: false },
       position: { x: 0, y: 0 },
     },
   ]);
@@ -313,7 +310,7 @@ export default function WikipediaGameBoard() {
       setEdges((edges) => [...edges, ...newEdges]);
 
       // Check if any of the new nodes contains the target word
-      if (topics.some((topic) => topic.toLowerCase().includes(TARGET_WORD.toLowerCase()))) {
+      if (topics.some((topic) => topic.toLowerCase().includes(endWord.toLowerCase()))) {
         setHasWon(true);
       }
     } catch (err) {
@@ -435,7 +432,7 @@ export default function WikipediaGameBoard() {
         // Check if any of the new nodes contains the target word
         if (
           topics.some((topic) =>
-            topic.toLowerCase().includes(TARGET_WORD.toLowerCase())
+            topic.toLowerCase().includes(endWord.toLowerCase())
           )
         ) {
           setHasWon(true);
@@ -456,11 +453,11 @@ export default function WikipediaGameBoard() {
       <div className="top-0 left-0 right-0 text-center z-50 mb-8">
         <p className="text-2xl text-white mb-8">
           {hasWon ? (
-            <>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{START_WORD}</span> to <span className="font-bold text-pink-400">{TARGET_WORD}</span>! 🎉</>
+            <>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{startWord}</span> to <span className="font-bold text-pink-400">{endWord}</span>! 🎉</>
           ) : (
             <>
-              Find a path from <span className="font-bold text-cyan-400">{START_WORD}</span> to{" "}
-              <span className="font-bold text-pink-400">{TARGET_WORD}</span>
+              Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "}
+              <span className="font-bold text-pink-400">{endWord}</span>
             </>
           )}
         </p>

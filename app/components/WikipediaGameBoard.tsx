@@ -15,7 +15,6 @@ import {
   ActionType,
   ACTIONS,
   ACTION_COLORS,
-  MIN_NODE_DISTANCE,
 } from "../constants/wikipediaGame";
 import { generateResponse, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
@@ -384,7 +383,7 @@ export default function WikipediaGameBoard() {
           <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
             <h3 className="text-lg mb-2 text-gray-900">
               {isIntersectionMode ? (
-                <>Select a second node to intersect with "{selectedNode.data.label}"</>
+                <>Select a second node to intersect with &quot;{selectedNode.data.label}&quot;</>
               ) : (
                 <>Actions for &quot;{selectedNode.data.label}&quot;</>
               )}

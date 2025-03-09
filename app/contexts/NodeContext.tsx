@@ -17,7 +17,9 @@ interface NodeContextType {
   edges: Edge<EdgeData>[];
   setNodes: React.Dispatch<React.SetStateAction<Node<NodeData>[]>>;
   setEdges: React.Dispatch<React.SetStateAction<Edge<EdgeData>[]>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onNodesChange: (changes: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onEdgesChange: (changes: any) => void;
   findValidPositions: (centerX: number, centerY: number, nodeCount: number, existingNodes: Node[]) => { x: number; y: number }[];
   isNeighborNode: (selectedNodeId: string, topic: string, nodes: Node[], edges: Edge<EdgeData>[], actionType: string) => boolean;

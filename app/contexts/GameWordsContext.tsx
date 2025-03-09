@@ -2,8 +2,10 @@
 
 import React, { createContext, useContext } from 'react';
 
+const DEFAULT_WORDS = ['USA', 'Elon Musk'];
+
 const DAILY_WORDS: Record<string, [string, string]> = {
-  '2025-03-00': ['USA', 'Elon Musk'],
+  '2025-03-09': ['USA', 'Society'],
   '2025-03-10': ['Bitcoin', 'China'],
   '2025-03-11': ['Pizza', 'Italy'],
   '2025-03-12': ['Shakespeare', 'Hollywood'],
@@ -24,7 +26,7 @@ export function GameWordsProvider({ children }: { children: React.ReactNode }) {
   const today = new Date().toISOString().split('T')[0];
   
   // Get today's words or fallback to default
-  const [startWord, endWord] = DAILY_WORDS[today] || ['USA', 'Elon Musk'];
+  const [startWord, endWord] = DAILY_WORDS[today] || DEFAULT_WORDS;
 
   return (
     <GameWordsContext.Provider value={{ startWord, endWord }}>

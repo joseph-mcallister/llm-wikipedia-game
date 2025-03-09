@@ -27,6 +27,12 @@ interface NodeData {
   borderColor?: string;
 }
 
+interface PathStep {
+  from: string;
+  to: string;
+  action: string;
+}
+
 // Helper function to calculate distance between two points
 const distance = (x1: number, y1: number, x2: number, y2: number): number => {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
@@ -165,6 +171,57 @@ const getNeighboringTopics = (nodeId: string, nodes: Node[], edges: Edge[]): str
     .map((node) => node.data.label);
 };
 
+// Helper function to find the winning path
+const findWinningPath = (nodes: Node[], edges: Edge[], endWord: string): PathStep[] => {
+  const endNode = nodes.find(node => 
+    node.data.label.toLowerCase().includes(endWord.toLowerCase())
+  );
+  if (!endNode) return [];
+
+  const path: PathStep[] = [];
+  let currentNode = endNode;
+  
+  while (currentNode) {
+    // Find incoming edges to current node
+    const incomingEdges = edges.filter(edge => edge.target === currentNode.id);
+    if (incomingEdges.length === 0) break;
+
+    // For intersection nodes, find both parent nodes
+    if (incomingEdges.length === 2) {
+      const [edge1, edge2] = incomingEdges;
+      const parent1 = nodes.find(n => n.id === edge1.source);
+      const parent2 = nodes.find(n => n.id === edge2.source);
+      if (parent1 && parent2) {
+        path.unshift({
+          from: `${parent1.data.label} and ${parent2.data.label}`,
+          to: currentNode.data.label,
+          action: "intersection"
+        });
+        // Continue from the first parent
+        currentNode = parent1;
+        continue;
+      }
+    }
+
+    // For regular nodes
+    const parentEdge = incomingEdges[0];
+    const parentNode = nodes.find(n => n.id === parentEdge.source);
+    if (!parentNode) break;
+
+    const edgeStyle = parentEdge.style?.stroke as string;
+    const action = Object.entries(ACTION_COLORS).find(([_, color]) => color === edgeStyle)?.[0] || "unknown";
+
+    path.unshift({
+      from: parentNode.data.label,
+      to: currentNode.data.label,
+      action
+    });
+    currentNode = parentNode;
+  }
+
+  return path;
+};
+
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
   const { engineInstance } = useLLM();
@@ -183,6 +240,7 @@ export default function WikipediaGameBoard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasWon, setHasWon] = useState(false);
+  const [winningPath, setWinningPath] = useState<PathStep[]>([]);
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     if (isIntersectionMode && selectedNode) {
@@ -203,6 +261,17 @@ export default function WikipediaGameBoard() {
     setSecondarySelectedNode(null);
     setIsIntersectionMode(false);
   }, []);
+
+  const copyPathToClipboard = () => {
+    const pathText = winningPath.map(step => {
+      if (step.action === "intersection") {
+        return `Intersection of ${step.from} → ${step.to}`;
+      }
+      return `${step.from} → ${step.to} (${step.action})`;
+    }).join("\n");
+    
+    navigator.clipboard.writeText(pathText);
+  };
 
   // Add new function to handle intersection
   const handleIntersection = async (firstNode: Node<NodeData>, secondNode: Node<NodeData>) => {
@@ -312,6 +381,11 @@ export default function WikipediaGameBoard() {
       // Check if any of the new nodes contains the target word
       if (topics.some((topic) => topic.toLowerCase().includes(endWord.toLowerCase()))) {
         setHasWon(true);
+        // Find and set the winning path
+        const updatedNodes = [...nodes, ...newNodes];
+        const updatedEdges = [...edges, ...newEdges];
+        const path = findWinningPath(updatedNodes, updatedEdges, endWord);
+        setWinningPath(path);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate intersection");
@@ -436,6 +510,11 @@ export default function WikipediaGameBoard() {
           )
         ) {
           setHasWon(true);
+          // Find and set the winning path
+          const updatedNodes = [...nodes, ...newNodes];
+          const updatedEdges = [...edges, ...newEdges];
+          const path = findWinningPath(updatedNodes, updatedEdges, endWord);
+          setWinningPath(path);
         }
       } catch (err) {
         setError(
@@ -451,9 +530,28 @@ export default function WikipediaGameBoard() {
   return (
     <div>
       <div className="top-0 left-0 right-0 text-center z-50 mb-8">
-        <p className="text-2xl text-white mb-8">
+        <div className="text-2xl text-white mb-8">
           {hasWon ? (
-            <>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{startWord}</span> to <span className="font-bold text-pink-400">{endWord}</span>! 🎉</>
+            <>
+              <div>🎉 Congratulations! You found a path from <span className="font-bold text-cyan-400">{startWord}</span> to <span className="font-bold text-pink-400">{endWord}</span>! 🎉</div>
+              <div className="mt-4 bg-gray-800 p-4 rounded-lg mx-auto max-w-2xl">
+                {winningPath.map((step, index) => (
+                  <div key={index} className="text-left mb-2 text-sm">
+                    {step.action === "intersection" ? (
+                      <span>Intersection of <b>{step.from}</b> → <b>{step.to}</b></span>
+                    ) : (
+                      <span><b>{step.from}</b> → <b>{step.to}</b> ({step.action})</span>
+                    )}
+                  </div>
+                ))}
+                <button 
+                  onClick={copyPathToClipboard}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Copy Path to Clipboard
+                </button>
+              </div>
+            </>
           ) : (
             <>
               Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "} 
@@ -461,7 +559,7 @@ export default function WikipediaGameBoard() {
               {" by tapping a topic"}
             </>
           )}
-        </p>
+        </div>
       </div>
 
       <div className="w-full h-[80vh] relative">

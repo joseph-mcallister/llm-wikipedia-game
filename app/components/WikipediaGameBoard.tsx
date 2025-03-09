@@ -308,7 +308,7 @@ export default function WikipediaGameBoard() {
       {/* Action Menu */}
       {selectedNode && (
         <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
-          <h3 className="text-lg font-semibold mb-2">Actions for &quot;{selectedNode.data.label}&quot;</h3>
+          <h3 className="text-lg font-semibold mb-2 text-gray-900">Actions for &quot;{selectedNode.data.label}&quot;</h3>
           <div className="grid grid-cols-2 gap-2">
             {ACTIONS.map(action => (
               <button

@@ -301,7 +301,7 @@ export default function WikipediaGameBoard() {
           onClick={handleReset}
           className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
         >
-          Reset Board
+          Start Over
         </button>
       </div>
     </div>

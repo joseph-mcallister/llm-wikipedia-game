@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -41,6 +41,17 @@ export default function WikipediaGameBoard() {
   const [error, setError] = useState<string | null>(null);
   const [hasWon, setHasWon] = useState(false);
   const [winningPath, setWinningPath] = useState<PathStep[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const generateResponse = async (prompt: string) => {
     if (engineInstance) {
@@ -233,7 +244,7 @@ export default function WikipediaGameBoard() {
             <>
               Find a path from <span className="font-bold text-cyan-400">{startWord}</span> to{" "}
               <span className="font-bold text-pink-400">{endWord}</span>
-              {" by tapping a topic"}
+              {` by ${isMobile ? 'tapping' : 'clicking'} a topic`}
             </>
           )}
         </div>

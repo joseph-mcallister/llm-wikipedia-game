@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useLLM } from "../contexts/LLMContext";
 import {
   IModel,
@@ -9,7 +9,7 @@ import {
   createWllamaInstance,
   generateResponse,
 } from "../utils/llm";
-import { TestCaseInput, TestCaseWithResponse, LLMJudgeResponse, OllamaResponse, TestCaseWithScore } from "./helpers";
+import { TestCaseWithResponse, LLMJudgeResponse, OllamaResponse, TestCaseWithScore } from "./helpers";
 import { testCases } from "./testCases";
 
 const isLocalhost = () => {
@@ -68,6 +68,10 @@ Score:10
 Given prompt: "Action: Future, Topic: Lightbulbs"
 AI response: "1. The future of lightbulbs is LED"
 Score: 0
+
+Given prompt: "Action: Opposite, Topic: Good"
+AI response: "Evil, Bad, Negative"
+Score: 10
 
 Given prompt: Action: places, Topic: War
 Response: War, War, War, War

@@ -20,7 +20,7 @@ export interface IModel {
 export const MODELS: IModel[] = [
   {
     id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",
-    name: "Llama-3.2-1B (best, webgpu)",
+    name: "Llama-3.2-1B (recommended, webgpu)",
     downloadSize: "650 MB",
     type: "mlc"
   },
@@ -31,8 +31,14 @@ export const MODELS: IModel[] = [
     type: "mlc"
   },
   {
+    id: "gemma-2-2b-it-q4f16_1-MLC",
+    name: "Gemma-2-2B (largest, webgpu)",
+    downloadSize: "1.4 GB",
+    type: "mlc"
+  },
+  {
     id: "hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF",
-    name: "Llama-3.2-1B (best, wasm)",
+    name: "Llama-3.2-1B (recommended, wasm)",
     filePath: "llama-3.2-1b-instruct-q4_k_m.gguf",
     downloadSize: "800 MB",
     type: "wllama"

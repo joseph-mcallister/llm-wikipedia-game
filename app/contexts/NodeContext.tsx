@@ -1,15 +1,23 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Node, Edge, useNodesState, useEdgesState } from 'reactflow';
-import { MIN_NODE_DISTANCE } from '../constants/wikipediaGame';
+import { ActionType, MIN_NODE_DISTANCE } from '../constants/wikipediaGame';
 
-interface NodeData {
+export interface NodeData {
   label: string;
   isBold?: boolean;
   borderColor?: string;
+  isStart?: boolean;
+  isEnd?: boolean;
 }
 
-interface EdgeData {
+export interface EdgeData {
   actionType: string;
+}
+
+export interface PathStep {
+  from: string;
+  to: string;
+  action: string;
 }
 
 interface NodeContextType {
@@ -25,12 +33,6 @@ interface NodeContextType {
   isNeighborNode: (selectedNodeId: string, topic: string, nodes: Node[], edges: Edge<EdgeData>[], actionType: string) => boolean;
   getNeighboringTopics: (nodeId: string, nodes: Node[], edges: Edge<EdgeData>[], actionType: string) => string[];
   findWinningPath: (nodes: Node[], edges: Edge<EdgeData>[], endWord: string) => PathStep[];
-}
-
-interface PathStep {
-  from: string;
-  to: string;
-  action: string;
 }
 
 const NodeContext = createContext<NodeContextType | undefined>(undefined);
@@ -89,8 +91,9 @@ export const NodeProvider: React.FC<{ children: ReactNode; startWord: string }> 
     {
       id: "0",
       type: "default",
-      data: { label: startWord, isBold: false },
+      data: { label: startWord, isBold: false, isStart: true, isEnd: false },
       position: { x: 0, y: 0 },
+      style: { background: 'rgb(34 211 238)' },
     },
   ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<EdgeData>([]);

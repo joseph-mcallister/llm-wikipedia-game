@@ -10,7 +10,7 @@ import ReactFlow, {
 } from "reactflow";
 import { useLLM } from "../contexts/LLMContext";
 import { useGameWords } from "../contexts/GameWordsContext";
-import { useNodes } from "../contexts/NodeContext";
+import { useNodes, NodeData, EdgeData, PathStep } from "../contexts/NodeContext";
 import {
   ActionType,
   ACTIONS,
@@ -19,21 +19,6 @@ import {
 import { generateResponseWithMLC, generateResponseWithWllama, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
 
-interface NodeData {
-  label: string;
-  isBold?: boolean;
-  borderColor?: string;
-}
-
-interface PathStep {
-  from: string;
-  to: string;
-  action: string;
-}
-
-interface EdgeData {
-  actionType: ActionType;
-}
 
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
@@ -131,7 +116,11 @@ export default function WikipediaGameBoard() {
           nodes.map((node) => ({
             ...node,
             data: { ...node.data, isBold: false, borderColor: undefined },
-            style: { fontWeight: "normal", border: 'none' },
+            style: { 
+              fontWeight: "normal", 
+              border: 'none',
+              ...(node.data.label.toLowerCase() === startWord.toLowerCase() && { background: 'rgb(34 211 238)' }),
+            },
           }))
         );
 
@@ -149,11 +138,13 @@ export default function WikipediaGameBoard() {
           const nodeId = `${selectedNode.id}-${actionType}-${timestamp}-${index}`;
           const position = positions[index];
 
+          const isEndNode = topic.toLowerCase() === endWord.toLowerCase();
           const newNode = {
             id: nodeId,
             data: { 
               label: topic, 
               isBold: true,
+              isEnd: isEndNode,
               borderColor: ACTION_COLORS[actionType]
             },
             position,
@@ -161,6 +152,7 @@ export default function WikipediaGameBoard() {
               fontWeight: "bold",
               border: `2px solid ${ACTION_COLORS[actionType]}`,
               borderRadius: '8px',
+              ...(isEndNode && { background: 'rgb(244 114 182)' }),
             },
           };
 

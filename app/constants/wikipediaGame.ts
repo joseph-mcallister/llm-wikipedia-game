@@ -12,16 +12,6 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     prompt: 'Respond with {n} more specific subtopics of "{topic}", as a comma-separated list with no other text or punctuation. Example format: subtopic1, subtopic2, subtopic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
-    type: 'similar', 
-    label: 'Similar',
-    prompt: 'Respond with {n} closely related topics to "{topic}", as a comma-separated list with no other text or punctuation. Example format: topic1, topic2, topic3, topic4. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
-    type: 'opposite', 
-    label: 'Opposite',
-    prompt: 'Respond with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
-  },
-  { 
     type: 'people', 
     label: 'People',
     prompt: 'Respond with {n} notable people closely associated with "{topic}", as a comma-separated list with no other text or punctuation. Example format: person1, person2, person3, person4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
@@ -30,6 +20,16 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     type: 'places', 
     label: 'Places',
     prompt: 'Respond with {n} significant places related to "{topic}", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
+  },
+  { 
+    type: 'similar', 
+    label: 'Similar',
+    prompt: 'Respond with {n} closely related topics to "{topic}", as a comma-separated list with no other text or punctuation. Example format: topic1, topic2, topic3, topic4. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
+  },
+  { 
+    type: 'opposite', 
+    label: 'Opposite',
+    prompt: 'Respond with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
     type: 'good', 

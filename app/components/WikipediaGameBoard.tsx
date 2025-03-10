@@ -78,7 +78,7 @@ export default function WikipediaGameBoard() {
       return `${step.from} → ${step.to} (${step.action})`;
     }).join("\n");
     const nodeCount = nodes.length;
-    const message = `Found a path from ${startWord} to ${endWord} in ${nodeCount} generated topics! \n${pathText}`;
+    const message = `I found a path from ${startWord} to ${endWord} with ${nodeCount} generated topics!\n${pathText}.\n\nTry it yourself at www.llmgame.ai`;
     navigator.clipboard.writeText(message);
   };
 

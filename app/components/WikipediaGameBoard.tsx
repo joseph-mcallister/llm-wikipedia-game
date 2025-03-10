@@ -16,7 +16,7 @@ import {
   ACTIONS,
   ACTION_COLORS,
 } from "../constants/wikipediaGame";
-import { generateResponseWithMLC, generateResponseWithWllama, parseResponse } from "../utils/llm";
+import { generateResponseWithMLC, generateResponseWithWllama, parseResponse, actionToPrompt } from "../utils/llm";
 import "reactflow/dist/style.css";
 
 
@@ -99,7 +99,7 @@ export default function WikipediaGameBoard() {
         ? `You have already generated these topics: ${neighboringTopics.join(", ")}. Generate new topics.` 
         : "";
 
-      const prompt = action.prompt
+      const prompt = actionToPrompt[actionType]
         .replace("{topic}", selectedNode.data.label)
         .replaceAll("{n}", maxTopics.toString())
         + " " + existingTopicsStr;

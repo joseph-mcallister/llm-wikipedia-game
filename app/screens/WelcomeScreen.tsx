@@ -50,18 +50,16 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
         };
         const wllamaInstance = await createWllamaInstance(selectedModel, progressCallback);
         setWllamaInstance(wllamaInstance);
-      } else {
-        if (!engineInstance) {
+      } else if (selectedModel.type === "mlc") {
           const engine = await createMLCEngineInstance(selectedModel, (report: InitProgressReport) => {
-            console.log("Model loading:", report);
-            const progressReport: DownloadProgressReport = {
-              percentCompleted: report.progress * 100,
-              text: report.text,
-            }
-            setProgress(progressReport);
-          });
-          setEngineInstance(engine);
-        }
+          console.log("Model loading:", report);
+          const progressReport: DownloadProgressReport = {
+            percentCompleted: report.progress * 100,
+            text: report.text,
+          }
+          setProgress(progressReport);
+        });
+        setEngineInstance(engine);
       }
       onGameStart();
     } catch (err) {

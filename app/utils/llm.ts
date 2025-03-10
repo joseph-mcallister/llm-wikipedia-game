@@ -17,7 +17,6 @@ export interface IModel {
   type: "mlc" | "wllama"
 }
 
-
 export const MODELS: IModel[] = [
   {
     id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",

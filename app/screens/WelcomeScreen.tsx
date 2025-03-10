@@ -119,7 +119,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
       >
-        {isLoading ? "Downloading model..." : "Download and Play*"}
+        {isLoading ? "Downloading model..." : "Play*"}
       </button>
 
       {isLoading && progress && (

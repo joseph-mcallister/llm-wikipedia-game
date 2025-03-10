@@ -2,6 +2,7 @@ import {
   ChatCompletionSystemMessageParam,
   ChatCompletionUserMessageParam,
   CreateMLCEngine,
+  InitProgressReport,
 } from "@mlc-ai/web-llm";
 
 import { Wllama, WllamaChatMessage } from '@wllama/wllama/esm/index.js';
@@ -58,6 +59,19 @@ export const createWllamaInstance = async (model: IModel, progressCallback: ({lo
     }
   );
   return wllamaInstance;
+}
+
+export const createMLCEngineInstance = async (
+  model: IModel,
+  progressCallback: (report: InitProgressReport) => void
+) => {
+  if (model.type !== "mlc") {
+    throw new Error("Model not configured correctly");
+  }
+  const engine = await CreateMLCEngine(model.id, {
+    initProgressCallback: progressCallback,
+  });
+  return engine;
 }
 
 export const generateResponseWithWllama = async (wllamaInstance: Wllama, prompt: string) => {

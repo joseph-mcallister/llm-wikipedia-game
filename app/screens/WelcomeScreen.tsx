@@ -5,7 +5,7 @@ import { useWebGPU } from "../contexts/WebGPUContext";
 import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
 import { useLLM } from "../contexts/LLMContext";
 import WebGPUStatus from "../components/WebGPUStatus";
-import { MODELS, createWllamaInstance } from "../utils/llm";
+import { MODELS, createWllamaInstance, createMLCEngineInstance } from "../utils/llm";
 
 interface WelcomeScreenProps {
   onGameStart: () => void;
@@ -52,15 +52,13 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
         setWllamaInstance(wllamaInstance);
       } else {
         if (!engineInstance) {
-          const engine = await CreateMLCEngine(selectedModel.id, {
-            initProgressCallback: (report: InitProgressReport) => {
-              console.log("Model loading:", report);
-              const progressReport: DownloadProgressReport = {
-                percentCompleted: report.progress * 100,
-                text: report.text,
-              }
-              setProgress(progressReport);
-            },
+          const engine = await createMLCEngineInstance(selectedModel, (report: InitProgressReport) => {
+            console.log("Model loading:", report);
+            const progressReport: DownloadProgressReport = {
+              percentCompleted: report.progress * 100,
+              text: report.text,
+            }
+            setProgress(progressReport);
           });
           setEngineInstance(engine);
         }

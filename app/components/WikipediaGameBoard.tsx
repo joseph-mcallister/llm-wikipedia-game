@@ -16,7 +16,7 @@ import {
   ACTIONS,
   ACTION_COLORS,
 } from "../constants/wikipediaGame";
-import { generateResponseWithMLC, generateResponseWithWllama, parseResponse, actionToPrompt } from "../utils/llm";
+import { generateResponse, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
 
 
@@ -53,18 +53,6 @@ export default function WikipediaGameBoard() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const generateResponse = async (prompt: string) => {
-    if (engineInstance) {
-      const result = await generateResponseWithMLC(engineInstance, prompt);
-      return result;
-    } else if (wllamaInstance) {
-      const result = await generateResponseWithWllama(wllamaInstance, prompt);
-      return result;
-    } else {
-      throw new Error("LLM not initialized");
-    }
-  }
-
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
   }, []);
@@ -92,115 +80,115 @@ export default function WikipediaGameBoard() {
       const action = ACTIONS.find((a) => a.type === actionType);
       if (!action) return;
 
-      const maxTopics = 4;
-
       const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges, actionType);
-      const existingTopicsStr = neighboringTopics.length 
-        ? `You have already generated these topics: ${neighboringTopics.join(", ")}. Generate new topics.` 
-        : "";
 
-      const prompt = actionToPrompt[actionType]
-        .replace("{topic}", selectedNode.data.label)
-        .replaceAll("{n}", maxTopics.toString())
-        + " " + existingTopicsStr;
-
-      console.log("Sending prompt:", prompt);
-
-      try {
-        const result = await generateResponse(prompt);
-
-        let topics = parseResponse(result, maxTopics);
-        console.log("Extracted topics:", topics);
-
-        topics = topics.filter(
-          (topic) =>
-            topic.toLowerCase() !== selectedNode.data.label.toLowerCase() &&
-            topic.trim().length > 0 &&
-            !isNeighborNode(selectedNode.id, topic, nodes, edges, actionType)
-        );
-
-        if (!topics.length) {
-          throw new Error("No topics generated");
-        }
-
-        setNodes((nodes) =>
-          nodes.map((node) => ({
-            ...node,
-            data: { ...node.data, isBold: false, borderColor: undefined },
-            style: { 
-              fontWeight: "normal", 
-              border: 'none',
-              ...(node.data.label.toLowerCase() === startWord.toLowerCase() && { background: 'rgb(34 211 238)' }),
-            },
-          }))
-        );
-
-        const positions = findValidPositions(
-          selectedNode.position.x,
-          selectedNode.position.y,
-          topics.length,
-          nodes
-        );
-
-        const newNodes: Node[] = [];
-        const timestamp = Date.now();
-
-        topics.forEach((topic, index) => {
-          const nodeId = `${selectedNode.id}-${actionType}-${timestamp}-${index}`;
-          const position = positions[index];
-
-          const isEndNode = topic.toLowerCase() === endWord.toLowerCase();
-          const newNode = {
-            id: nodeId,
-            data: { 
-              label: topic, 
-              isBold: true,
-              isEnd: isEndNode,
-              borderColor: ACTION_COLORS[actionType]
-            },
-            position,
-            style: { 
-              fontWeight: "bold",
-              border: `2px solid ${ACTION_COLORS[actionType]}`,
-              borderRadius: '8px',
-              ...(isEndNode && { background: 'rgb(244 114 182)' }),
-            },
-          };
-
-          newNodes.push(newNode);
-        });
-
-        const newEdges: Edge<EdgeData>[] = newNodes.map((node) => ({
-          id: `e-${selectedNode.id}-${node.id}`,
-          source: selectedNode.id,
-          target: node.id,
-          style: { stroke: ACTION_COLORS[actionType] },
-          markerEnd: {
-            type: MarkerType.Arrow,
-            color: ACTION_COLORS[actionType],
-          },
-          data: { actionType },
-        }));
-
-        setNodes((nodes) => [...nodes, ...newNodes]);
-        setEdges((edges) => [...edges, ...newEdges]);
-
-        if (
-          topics.some((topic) =>
-            topic.toLowerCase().includes(endWord.toLowerCase())
-          )
-        ) {
-          setHasWon(true);
-          const updatedNodes = [...nodes, ...newNodes];
-          const updatedEdges = [...edges, ...newEdges];
-          const path = findWinningPath(updatedNodes, updatedEdges, endWord);
-          setWinningPath(path);
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to generate response"
-        );
+      const engine = engineInstance || wllamaInstance;
+      if (!engine) {
+        throw new Error("LLM not initialized");
       }
+
+      const result = await generateResponse(engine, {
+        actionType,
+        nodeLabel: selectedNode.data.label,
+        neighboringTopics,
+        maxTopics: 4
+      });
+
+      if (!result) {
+        throw new Error("No response generated");
+      }
+
+      let topics = parseResponse(result, 4);
+      console.log("Extracted topics:", topics);
+
+      topics = topics.filter(
+        (topic) =>
+          topic.toLowerCase() !== selectedNode.data.label.toLowerCase() &&
+          topic.trim().length > 0 &&
+          !isNeighborNode(selectedNode.id, topic, nodes, edges, actionType)
+      );
+
+      if (!topics.length) {
+        throw new Error("No topics generated");
+      }
+
+      setNodes((nodes) =>
+        nodes.map((node) => ({
+          ...node,
+          data: { ...node.data, isBold: false, borderColor: undefined },
+          style: { 
+            fontWeight: "normal", 
+            border: 'none',
+            ...(node.data.label.toLowerCase() === startWord.toLowerCase() && { background: 'rgb(34 211 238)' }),
+          },
+        }))
+      );
+
+      const positions = findValidPositions(
+        selectedNode.position.x,
+        selectedNode.position.y,
+        topics.length,
+        nodes
+      );
+
+      const newNodes: Node[] = [];
+      const timestamp = Date.now();
+
+      topics.forEach((topic, index) => {
+        const nodeId = `${selectedNode.id}-${actionType}-${timestamp}-${index}`;
+        const position = positions[index];
+
+        const isEndNode = topic.toLowerCase() === endWord.toLowerCase();
+        const newNode = {
+          id: nodeId,
+          data: { 
+            label: topic, 
+            isBold: true,
+            isEnd: isEndNode,
+            borderColor: ACTION_COLORS[actionType]
+          },
+          position,
+          style: { 
+            fontWeight: "bold",
+            border: `2px solid ${ACTION_COLORS[actionType]}`,
+            borderRadius: '8px',
+            ...(isEndNode && { background: 'rgb(244 114 182)' }),
+          },
+        };
+
+        newNodes.push(newNode);
+      });
+
+      const newEdges: Edge<EdgeData>[] = newNodes.map((node) => ({
+        id: `e-${selectedNode.id}-${node.id}`,
+        source: selectedNode.id,
+        target: node.id,
+        style: { stroke: ACTION_COLORS[actionType] },
+        markerEnd: {
+          type: MarkerType.Arrow,
+          color: ACTION_COLORS[actionType],
+        },
+        data: { actionType },
+      }));
+
+      setNodes((nodes) => [...nodes, ...newNodes]);
+      setEdges((edges) => [...edges, ...newEdges]);
+
+      if (
+        topics.some((topic) =>
+          topic.toLowerCase().includes(endWord.toLowerCase())
+        )
+      ) {
+        setHasWon(true);
+        const updatedNodes = [...nodes, ...newNodes];
+        const updatedEdges = [...edges, ...newEdges];
+        const path = findWinningPath(updatedNodes, updatedEdges, endWord);
+        setWinningPath(path);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to generate response"
+      );
     } finally {
       setLoading(false);
       setSelectedNode(null);

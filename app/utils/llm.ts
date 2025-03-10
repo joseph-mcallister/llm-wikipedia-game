@@ -59,6 +59,11 @@ export const actionToPrompt: { [key in ActionType]: string } = {
   past: "Respond with {n} historical aspects of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: past1, past2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
 }
 
+export const generatePrompt = (actionType: ActionType, nodeLabel: string, neighboringTopics: string[], maxTopics: number) => {
+  const prompt = actionToPrompt[actionType].replace("{n}", maxTopics.toString()).replace("{topic}", nodeLabel);
+  return prompt;
+}
+
 export const createWllamaInstance = async (model: IModel, progressCallback: ({loaded, total}: {loaded: number, total: number}) => void) => {
   const wllamaInstance = new Wllama(WasmFromCDN); // TODO: Figure out how to get nextjs to import the wasm from node module
   if (model.type !== "wllama" || model.filePath === undefined) {
@@ -87,50 +92,58 @@ export const createMLCEngineInstance = async (
   return engine;
 }
 
-export const generateResponseWithWllama = async (wllamaInstance: Wllama, prompt: string) => {
-  const messages: WllamaChatMessage[] = [
-    {
-      role: "system",
-      content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
-    },
-    { role: "user", content: prompt },
-  ];
-  const outputText = await wllamaInstance.createChatCompletion(messages,{ 
-    sampling: {
-      temp: 0.7,
-    },
-  });
-  return outputText;
+interface GenerateResponseParams {
+  actionType: ActionType;
+  nodeLabel: string;
+  neighboringTopics: string[];
+  maxTopics?: number;
 }
 
-export const generateResponseWithMLC = async (
-  engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>>,
-  prompt: string
+export const generateResponse = async (
+  engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>>,
+  params: GenerateResponseParams
 ) => {
-  try {
-    const messages: (
-      | ChatCompletionSystemMessageParam
-      | ChatCompletionUserMessageParam
-    )[] = [
+  const { actionType, nodeLabel, neighboringTopics, maxTopics = 4 } = params;
+
+  if (engine instanceof Wllama) {
+    const prompt = generatePrompt(actionType, nodeLabel, neighboringTopics, maxTopics);
+    const messages: WllamaChatMessage[] = [
       {
         role: "system",
-        content:
-          "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
+        content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
       },
       { role: "user", content: prompt },
     ];
-
-    // Generate response
-    const response = await engineInstance.chat.completions.create({
-      messages,
-      temperature: 0.7,
-      max_tokens: 100,
+    return await engine.createChatCompletion(messages, { 
+      sampling: {
+        temp: 0.7,
+      },
     });
+  } else {
+    try {
+      const prompt = generatePrompt(actionType, nodeLabel, neighboringTopics, maxTopics);
+      const messages: (
+        | ChatCompletionSystemMessageParam
+        | ChatCompletionUserMessageParam
+      )[] = [
+        {
+          role: "system",
+          content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
+        },
+        { role: "user", content: prompt },
+      ];
 
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error("WebLLM error:", error);
-    throw error;
+      const response = await engine.chat.completions.create({
+        messages,
+        temperature: 0.7,
+        max_tokens: 100,
+      });
+
+      return response.choices[0].message.content;
+    } catch (error) {
+      console.error("WebLLM error:", error);
+      throw error;
+    }
   }
 };
 

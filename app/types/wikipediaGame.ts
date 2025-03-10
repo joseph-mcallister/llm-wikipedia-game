@@ -7,14 +7,6 @@ export interface NodeData {
   borderColor?: string;
 }
 
-export type ActionType = 'related' | 'broader' | 'narrower' | 'expand';
-
-export interface Action {
-  type: ActionType;
-  label: string;
-  prompt: string;
-}
-
 export type LLMMessage = ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam;
 
 export interface Position {

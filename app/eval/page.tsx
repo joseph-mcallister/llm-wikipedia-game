@@ -104,7 +104,11 @@ Given prompt: Action: places, Topic: War
 Response: War, War, War, War
 Score: 0
 
-Given prompt: "Action: Future, Topic: Lightbulbs"
+Given prompt: "Action: Opposite, Topic: Republican"
+AI response: "Democrat, Socialist, Liberal, Progressive"
+Score: 10
+
+Given prompt: "Action: Past, Topic: Lightbulbs"
 AI response: "Candle, Lamp, Torch"
 Score: 3
 
@@ -256,6 +260,7 @@ export default function EvalPage() {
         console.error("Error during evaluation:", error);
       }
     }
+    setIsEvalRunning(false);
   };
 
   return (

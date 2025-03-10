@@ -9,8 +9,36 @@ import {
   createWllamaInstance,
   generateResponse,
 } from "../utils/llm";
-import { TestCaseWithResponse, LLMJudgeResponse, OllamaResponse, TestCaseWithScore } from "./helpers";
+import {
+  TestCaseWithResponse,
+  LLMJudgeResponse,
+  OllamaResponse,
+  TestCaseWithScore,
+} from "./helpers";
 import { testCases } from "./testCases";
+import { ACTIONS, ActionType } from "../constants/wikipediaGame";
+
+const systemPromptOverride =
+  "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.";
+const actionToUserPromptOverride: { [key in ActionType]: string } = {
+  broader:
+    'Respond with exactly {n} broader categories or topics that encompass "{topic}". Format: category1, category2. Keep each topic concise (1-3 words). Must be broader than the original topic.',
+  deeper:
+    'Respond with exactly {n} specific subtopics or examples of "{topic}". Format: subtopic1, subtopic2. Keep each topic concise (1-3 words). Must be more specific than the original topic.',
+  people:
+    'Respond with exactly {n} real people who are directly connected to "{topic}" (creators, experts, historical figures). Format: person1, person2. Use full names where possible.',
+  places:
+    'Respond with exactly {n} specific real-world locations strongly connected to "{topic}". Format: place1, place2. Can include cities, countries, landmarks, or institutions.',
+  similar:
+    'Respond with exactly {n} topics that are closely related to but distinct from "{topic}". Format: topic1, topic2. Keep each topic concise (1-3 words). Must be at same level of specificity.',
+  opposite:
+    'Respond with exactly {n} direct conceptual opposites or antonyms of "{topic}". Format: opposite1, opposite2. Keep each response concise (1-3 words).',
+  good: 'Respond with exactly {n} positive/beneficial/ethical aspects or examples related to "{topic}". Format: example1, example2. Keep each response concise (1-3 words).',
+  evil: 'Respond with exactly {n} negative/harmful/unethical aspects or examples related to "{topic}". Format: example1, example2. Keep each response concise (1-3 words).',
+  future:
+    'Respond with exactly {n} realistic future developments, trends or possibilities related to "{topic}". Format: future1, future2. Keep each response concise (1-3 words).',
+  past: 'Respond with exactly {n} historical events, periods or developments related to "{topic}". Format: past1, past2. Keep each response concise (1-3 words).',
+};
 
 const isLocalhost = () => {
   if (typeof window !== "undefined") {
@@ -21,7 +49,6 @@ const isLocalhost = () => {
   }
   return false;
 };
-
 
 const callJudge = async (
   testCase: TestCaseWithResponse
@@ -107,8 +134,11 @@ Score:`,
 export default function EvalPage() {
   const [selectedModelId, setSelectedModelId] = useState<string>(MODELS[0].id);
   const [response, setResponse] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isModelLoading, setIsModelLoading] = useState(false);
+  const [isEvalRunning, setIsEvalRunning] = useState(false);
   const [testResults, setTestResults] = useState<TestCaseWithScore[]>([]);
+  const [selectedAction, setSelectedAction] = useState<ActionType | "">("");
+  const [usePromptOverrides, setUsePromptOverrides] = useState(false);
   const {
     engineInstance,
     setEngineInstance,
@@ -118,7 +148,7 @@ export default function EvalPage() {
   const [isModelLoaded, setIsModelLoaded] = useState(false);
 
   const loadModel = async (selectedModel: IModel) => {
-    setIsLoading(true);
+    setIsModelLoading(true);
 
     try {
       if (selectedModel.type === "mlc") {
@@ -145,7 +175,7 @@ export default function EvalPage() {
       }
       setIsModelLoaded(true);
     } finally {
-      setIsLoading(false);
+      setIsModelLoading(false);
     }
   };
 
@@ -156,6 +186,7 @@ export default function EvalPage() {
   };
 
   const handleRunEval = async () => {
+    setIsEvalRunning(true);
     setTestResults([]);
 
     const selectedModel = MODELS.find((model) => model.id === selectedModelId);
@@ -168,21 +199,36 @@ export default function EvalPage() {
 
     for (const testCase of testCases) {
       let modelOutput: string | undefined | null = undefined;
-      const prompt = `${testCase.actionType} ${testCase.node}`;
+      const actionType = selectedAction || testCase.actionType;
+      const prompt = `${actionType} ${testCase.node}`;
       console.log("Testing prompt:", prompt);
 
       try {
         if (selectedModel?.type === "mlc" && engineInstance) {
           modelOutput = await generateResponse(engineInstance, {
-            actionType: testCase.actionType,
+            actionType: actionType as ActionType,
             nodeLabel: testCase.node,
+            maxTopics: 4,
             neighboringTopics: [],
+            systemPromptOverride: usePromptOverrides
+              ? systemPromptOverride
+              : undefined,
+            actionToUserPromptOverride: usePromptOverrides
+              ? actionToUserPromptOverride
+              : undefined,
           });
         } else if (selectedModel?.type === "wllama" && wllamaInstance) {
           modelOutput = await generateResponse(wllamaInstance, {
-            actionType: testCase.actionType,
+            actionType: actionType as ActionType,
             nodeLabel: testCase.node,
             neighboringTopics: [],
+            maxTopics: 4,
+            systemPromptOverride: usePromptOverrides
+              ? systemPromptOverride
+              : undefined,
+            actionToUserPromptOverride: usePromptOverrides
+              ? actionToUserPromptOverride
+              : undefined,
           });
         } else {
           console.error("No valid engine available");
@@ -192,6 +238,7 @@ export default function EvalPage() {
         if (modelOutput) {
           const judgeResponse = await callJudge({
             ...testCase,
+            actionType: actionType as ActionType,
             response: modelOutput,
           });
           console.log("Judge response:", judgeResponse);
@@ -199,6 +246,7 @@ export default function EvalPage() {
             ...prev,
             {
               ...testCase,
+              actionType: actionType as ActionType,
               response: modelOutput!,
               score: judgeResponse.score,
             },
@@ -212,7 +260,8 @@ export default function EvalPage() {
 
   return (
     <div className="p-4 text-white">
-      <div className="flex gap-4 mb-4">
+      <div className="text-xl font-bold mb-4">Eval Settings</div>
+      <div className="flex flex-col gap-4 mb-4 max-w-md">
         <select
           value={selectedModelId}
           onChange={(e) => {
@@ -228,37 +277,63 @@ export default function EvalPage() {
           ))}
         </select>
 
+        <select
+          value={selectedAction}
+          onChange={(e) => setSelectedAction(e.target.value as ActionType | "")}
+          className="border rounded p-2 bg-black text-white"
+        >
+          <option value="">Use test case actions</option>
+          {ACTIONS.map((action) => (
+            <option key={action.type} value={action.type}>
+              Override with: {action.label}
+            </option>
+          ))}
+        </select>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={usePromptOverrides}
+            onChange={(e) => setUsePromptOverrides(e.target.checked)}
+            className="form-checkbox"
+          />
+          Use prompt overrides
+        </label>
+
         <button
           onClick={handleLoadModel}
-          disabled={isLoading}
+          disabled={isModelLoading}
           className="bg-black text-white px-4 py-2 rounded border border-white disabled:opacity-50"
         >
-          {isLoading ? "Loading..." : "Load Model"}
+          {isModelLoading ? "Loading..." : "Load Model"}
         </button>
 
         <button
           onClick={handleRunEval}
-          disabled={isLoading || !isModelLoaded}
+          disabled={isEvalRunning || !isModelLoaded}
           className="bg-black text-white px-4 py-2 rounded border border-white disabled:opacity-50"
         >
-          {isLoading ? "Loading..." : "Run Eval"}
+          {isEvalRunning ? "Running..." : "Run Eval"}
         </button>
       </div>
       <div className="mt-8">
         {testResults.length > 0 && (
-          <div className="mb-8 text-xl">
-            Average Score:{" "}
-            {(
-              testResults.reduce((acc, result) => acc + result.score, 0) /
-              testResults.length
-            ).toFixed(1)}
-            /10
+          <div>
+            <div className="text-xl font-bold mb-4">Eval Results</div>
+            <div className="mb-8 text-xl">
+              Average Score:{" "}
+              {(
+                testResults.reduce((acc, result) => acc + result.score, 0) /
+                testResults.length
+              ).toFixed(1)}
+              /10
+            </div>
           </div>
         )}
         {testResults.map((result, index) => (
           <div key={index} className="mb-4 p-4 border border-white/20 rounded">
             <div className="font-bold">Test Case {index + 1}</div>
-            <div>Action: {result.actionType}</div>
+            <div>Action: {selectedAction || result.actionType}</div>
             <div>Node: {result.node}</div>
             <div>Response: {result.response}</div>
             <div>Score: {result.score}/10</div>

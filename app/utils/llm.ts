@@ -52,7 +52,7 @@ export const MODELS: IModel[] = [
   },
 ];
 
-export const actionToPrompt: { [key in ActionType]: string } = {
+export const actionToUserPrompt: { [key in ActionType]: string } = {
   broader: "Respond with {n} broader topics that encompass \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: broader1, broader2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
   deeper: "Respond with {n} more specific subtopics of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: subtopic1, subtopic2, subtopic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
   people: "Respond with {n} notable people closely associated with \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: person1, person2, person3, person4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
@@ -63,11 +63,6 @@ export const actionToPrompt: { [key in ActionType]: string } = {
   evil: "Respond with {n} \"evil\" things related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
   future: "Respond with {n} future developments related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: future1, future2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
   past: "Respond with {n} historical aspects of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: past1, past2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
-}
-
-export const generatePrompt = (actionType: ActionType, nodeLabel: string, neighboringTopics: string[], maxTopics: number) => {
-  const prompt = actionToPrompt[actionType].replace("{n}", maxTopics.toString()).replace("{topic}", nodeLabel);
-  return prompt;
 }
 
 export const createWllamaInstance = async (model: IModel, progressCallback: ({loaded, total}: {loaded: number, total: number}) => void) => {
@@ -102,24 +97,28 @@ interface GenerateResponseParams {
   actionType: ActionType;
   nodeLabel: string;
   neighboringTopics: string[];
-  maxTopics?: number;
+  maxTopics: number;
+  systemPromptOverride?: string;
+  actionToUserPromptOverride?: { [key in ActionType]: string };
 }
 
 export const generateResponse = async (
   engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>>,
   params: GenerateResponseParams
 ) => {
-  const { actionType, nodeLabel, neighboringTopics, maxTopics = 4 } = params;
+  const systemPrompt = params.systemPromptOverride || "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.";
+  let userPrompt = (params.actionToUserPromptOverride && params.actionToUserPromptOverride[params.actionType]) || actionToUserPrompt[params.actionType];
+  userPrompt = userPrompt.replace("{n}", params.maxTopics.toString()).replace("{topic}", params.nodeLabel).replace("{neighboringTopics}", params.neighboringTopics.join(", "));
 
   if (engine instanceof Wllama) {
-    const prompt = generatePrompt(actionType, nodeLabel, neighboringTopics, maxTopics);
     const messages: WllamaChatMessage[] = [
       {
         role: "system",
-        content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
+        content: systemPrompt,
       },
-      { role: "user", content: prompt },
+      { role: "user", content: userPrompt },
     ];
+    console.log("Sending to Wllama:", messages);
     return await engine.createChatCompletion(messages, { 
       sampling: {
         temp: 0.7,
@@ -127,18 +126,17 @@ export const generateResponse = async (
     });
   } else {
     try {
-      const prompt = generatePrompt(actionType, nodeLabel, neighboringTopics, maxTopics);
       const messages: (
         | ChatCompletionSystemMessageParam
         | ChatCompletionUserMessageParam
       )[] = [
         {
           role: "system",
-          content: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
+          content: systemPrompt,
         },
-        { role: "user", content: prompt },
+        { role: "user", content: userPrompt },
       ];
-
+      console.log("Sending to MLC:", messages);
       const response = await engine.chat.completions.create({
         messages,
         temperature: 0.7,

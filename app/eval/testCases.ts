@@ -2,8 +2,16 @@ import { TestCaseInput } from "./helpers";
 
 export const testCases: TestCaseInput[] = [
     {
-      actionType: "broader",
+      actionType: "deeper",
       node: "AI",
+    },
+    {
+      actionType: "broader",
+      node: "Artificial Intelligence",
+    },
+    {
+      actionType: "broader",
+      node: "History",
     },
     {
       actionType: "deeper",
@@ -45,6 +53,17 @@ export const testCases: TestCaseInput[] = [
         actionType: "past",
         node: "Future",
     },
-    
+    {
+        actionType: "similar",
+        node: "Elon Musk",
+    },
+    {
+       actionType: "opposite",
+       node: "Liberal",
+    },
+    {
+      actionType: "opposite",
+      node: "Republican",
+    },
     
   ];

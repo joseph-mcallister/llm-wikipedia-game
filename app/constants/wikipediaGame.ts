@@ -1,4 +1,4 @@
-export type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil' | 'things' | 'intersection' | 'examples';
+export type ActionType = 'expand' | 'opposite' | 'deeper' | 'broader' | 'timeForward' | 'timeBackward' | 'surprise' | 'people' | 'places' | 'good' | 'evil' | 'things' | 'examples';
 
 export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
   { 
@@ -57,11 +57,6 @@ export const ACTIONS: { type: ActionType; label: string; prompt: string; }[] = [
     prompt: 'Respond with {n} conceptual opposites of "{topic}", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.'
   },
   { 
-    type: 'intersection', 
-    label: 'Intersection of',
-    prompt: 'Respond with {n} topics that are meaningfully connected to both "{topic1}" and "{topic2}", as a comma-separated list with no other text or punctuation. Example format: connection1, connection2, connection3, connection4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
-  },
-  { 
     type: 'examples',
     label: 'Examples',
     prompt: 'Respond with {n} examples of "{topic}", as a comma-separated list with no other text or punctuation. DO NOT RESPOND WITH MORE THAN {n} TOPICS.'
@@ -86,7 +81,6 @@ export const ACTION_COLORS: Record<ActionType, string> = {
   good: '#8BC34A',        // Light Green
   evil: '#607D8B',        // Blue Grey
   things: '#FFEB3B',      // Yellow
-  intersection: '#673AB7', // Deep Purple
   examples: '#FFEB3B',      // Yellow
 };
 

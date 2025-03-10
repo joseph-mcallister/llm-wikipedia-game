@@ -52,8 +52,6 @@ export default function WikipediaGameBoard() {
   } = useNodes();
   
   const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
-  const [isIntersectionMode, setIsIntersectionMode] = useState(false);
-  const [secondarySelectedNode, setSecondarySelectedNode] = useState<Node<NodeData> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasWon, setHasWon] = useState(false);
@@ -72,29 +70,15 @@ export default function WikipediaGameBoard() {
   }
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    if (isIntersectionMode && selectedNode) {
-      if (node.id === selectedNode.id) {
-        return;
-      }
-      setSecondarySelectedNode(node);
-      handleIntersection(selectedNode, node);
-    } else {
-      setSelectedNode(node);
-      setSecondarySelectedNode(null);
-    }
-  }, [isIntersectionMode, selectedNode]);
+    setSelectedNode(node);
+  }, []);
 
   const handlePaneClick = useCallback(() => {
     setSelectedNode(null);
-    setSecondarySelectedNode(null);
-    setIsIntersectionMode(false);
   }, []);
 
   const copyPathToClipboard = () => {
     const pathText = winningPath.map(step => {
-      if (step.action === "intersection") {
-        return `Intersection of ${step.from} → ${step.to}`;
-      }
       return `${step.from} → ${step.to} (${step.action})`;
     }).join("\n");
     const nodeCount = nodes.length;
@@ -102,130 +86,8 @@ export default function WikipediaGameBoard() {
     navigator.clipboard.writeText(message);
   };
 
-  const handleIntersection = async (firstNode: Node<NodeData>, secondNode: Node<NodeData>) => {
-    if (!engineInstance) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const maxTopics = 4;
-      const action = ACTIONS.find((a) => a.type === 'intersection');
-      if (!action) return;
-
-      const prompt = action.prompt
-        .replace("{topic1}", firstNode.data.label)
-        .replace("{topic2}", secondNode.data.label)
-        .replace("{n}", maxTopics.toString());
-
-      console.log("Sending intersection prompt:", prompt);
-
-      const result = await generateResponse(prompt);
-      let topics = parseResponse(result, maxTopics);
-
-      topics = topics.filter(
-        (topic) =>
-          topic.toLowerCase() !== firstNode.data.label.toLowerCase() &&
-          topic.toLowerCase() !== secondNode.data.label.toLowerCase() &&
-          topic.trim().length > 0 &&
-          !isNeighborNode(firstNode.id, topic, nodes, edges, 'intersection') &&
-          !isNeighborNode(secondNode.id, topic, nodes, edges, 'intersection')
-      );
-
-      if (!topics.length) {
-        throw new Error("No intersection topics generated");
-      }
-
-      const centerX = (firstNode.position.x + secondNode.position.x) / 2;
-      const centerY = (firstNode.position.y + secondNode.position.y) / 2;
-
-      const positions = findValidPositions(centerX, centerY, topics.length, nodes);
-
-      const newNodes: Node[] = [];
-      const timestamp = Date.now();
-
-      topics.forEach((topic, index) => {
-        const nodeId = `intersection-${timestamp}-${index}`;
-        const position = positions[index];
-
-        const newNode = {
-          id: nodeId,
-          data: { 
-            label: topic, 
-            isBold: true,
-            borderColor: ACTION_COLORS.intersection
-          },
-          position,
-          style: { 
-            fontWeight: "bold",
-            border: `2px solid ${ACTION_COLORS.intersection}`,
-            borderRadius: '8px',
-          },
-        };
-
-        newNodes.push(newNode);
-      });
-
-      const newEdges: Edge<EdgeData>[] = newNodes.flatMap((node) => [
-        {
-          id: `e-${firstNode.id}-${node.id}`,
-          source: firstNode.id,
-          target: node.id,
-          style: { stroke: ACTION_COLORS.intersection },
-          markerEnd: {
-            type: MarkerType.Arrow,
-            color: ACTION_COLORS.intersection,
-          },
-          data: { actionType: 'intersection' },
-        },
-        {
-          id: `e-${secondNode.id}-${node.id}`,
-          source: secondNode.id,
-          target: node.id,
-          style: { stroke: ACTION_COLORS.intersection },
-          markerEnd: {
-            type: MarkerType.Arrow,
-            color: ACTION_COLORS.intersection,
-          },
-          data: { actionType: 'intersection' },
-        },
-      ]);
-
-      setNodes((nodes) => {
-        const unbolded = nodes.map((node) => ({
-          ...node,
-          data: { ...node.data, isBold: false, borderColor: undefined },
-          style: { fontWeight: "normal", border: 'none', padding: '8px' },
-        }));
-        return [...unbolded, ...newNodes];
-      });
-      
-      setEdges((edges) => [...edges, ...newEdges]);
-
-      if (topics.some((topic) => topic.toLowerCase().includes(endWord.toLowerCase()))) {
-        setHasWon(true);
-        const updatedNodes = [...nodes, ...newNodes];
-        const updatedEdges = [...edges, ...newEdges];
-        const path = findWinningPath(updatedNodes, updatedEdges, endWord);
-        setWinningPath(path);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate intersection");
-    } finally {
-      setLoading(false);
-      setSelectedNode(null);
-      setSecondarySelectedNode(null);
-      setIsIntersectionMode(false);
-    }
-  };
-
   const handleAction = async (actionType: ActionType) => {
     if (!selectedNode) return;
-
-    if (actionType === 'intersection') {
-      setIsIntersectionMode(true);
-      return;
-    }
 
     try {
       setLoading(true);
@@ -347,8 +209,6 @@ export default function WikipediaGameBoard() {
     setNodes((nodes) => nodes.filter(node => !node.id.includes('-')));
     setEdges([]);
     setSelectedNode(null);
-    setSecondarySelectedNode(null);
-    setIsIntersectionMode(false);
     setHasWon(false);
     setWinningPath([]);
     setError(null);
@@ -366,11 +226,7 @@ export default function WikipediaGameBoard() {
                 <div className="text-left mb-2 text-sm">Found in <b>{nodes.length}</b> generated topics!</div>
                 {winningPath.map((step, index) => (
                   <div key={index} className="text-left mb-2 text-sm">
-                    {step.action === "intersection" ? (
-                      <span>Intersection of <b>{step.from}</b> → <b>{step.to}</b></span>
-                    ) : (
-                      <span><b>{step.from}</b> ({step.action}) → <b>{step.to}</b></span>
-                    )}
+                    <span><b>{step.from}</b> ({step.action}) → <b>{step.to}</b></span>
                   </div>
                 ))}
                 <button 
@@ -408,39 +264,20 @@ export default function WikipediaGameBoard() {
         {selectedNode && !loading && (
           <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border z-50">
             <h3 className="text-lg mb-2 text-gray-900">
-              {isIntersectionMode ? (
-                <>Select a second node to intersect with &quot;{selectedNode.data.label}&quot;</>
-              ) : (
-                <>Actions for &quot;{selectedNode.data.label}&quot;</>
-              )}
+              Actions for &quot;{selectedNode.data.label}&quot;
             </h3>
-            {!isIntersectionMode && (
-              <div className="grid grid-cols-2 gap-2">
-                {ACTIONS.map((action) => (
-                  <button
-                    key={action.type}
-                    onClick={() => handleAction(action.type)}
-                    className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                    disabled={loading}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {isIntersectionMode && (
-              <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              {ACTIONS.map((action) => (
                 <button
-                  onClick={() => {
-                    setIsIntersectionMode(false);
-                    setSecondarySelectedNode(null);
-                  }}
+                  key={action.type}
+                  onClick={() => handleAction(action.type)}
                   className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  disabled={loading}
                 >
-                  Cancel Intersection
+                  {action.label}
                 </button>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         )}
 

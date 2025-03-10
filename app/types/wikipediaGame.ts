@@ -7,7 +7,7 @@ export interface NodeData {
   borderColor?: string;
 }
 
-export type ActionType = 'related' | 'broader' | 'narrower' | 'intersection' | 'expand';
+export type ActionType = 'related' | 'broader' | 'narrower' | 'expand';
 
 export interface Action {
   type: ActionType;

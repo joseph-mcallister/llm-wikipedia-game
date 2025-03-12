@@ -93,7 +93,7 @@ export const createMLCEngineInstance = async (
   return engine;
 }
 
-interface GenerateResponseParams {
+export interface GenerateResponseParams {
   actionType: ActionType;
   nodeLabel: string;
   neighboringTopics: string[];
@@ -107,8 +107,7 @@ interface GenerateResponseParams {
   topK?: number;
 }
 
-
-const defaultParams = {
+export const defaultParams = {
   temperature: 0.7,
   maxTokens: 20,
   systemPromptOverride: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
@@ -122,7 +121,6 @@ export const generateResponse = async (
   const systemPrompt = params.systemPromptOverride || defaultParams.systemPromptOverride;
   let prompt = (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
   prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
-
   if (engine instanceof Wllama) {
     if (params.modelType === "chat") {
       const messages: WllamaChatMessage[] = [
@@ -135,17 +133,17 @@ export const generateResponse = async (
       console.log("Sending to Wllama:", messages);
       return await engine.createChatCompletion(messages, { 
         sampling: {
-          temp: defaultParams.temperature,
+          temp: params.temperature || defaultParams.temperature,
         },
-        nPredict: defaultParams.maxTokens,
+        nPredict: params.maxTokens || defaultParams.maxTokens,
       });
     } else {
       console.log("Sending to Wllama:", prompt);
       return await engine.createCompletion(prompt, {
         sampling: {
-          temp: defaultParams.temperature,
+          temp: params.temperature || defaultParams.temperature,
         },
-        nPredict: defaultParams.maxTokens,
+        nPredict: params.maxTokens || defaultParams.maxTokens,
       });
     }
   } else {
@@ -164,15 +162,16 @@ export const generateResponse = async (
         console.log("Sending to MLC:", messages);
         const response = await engine.chat.completions.create({
           messages,
-          temperature: defaultParams.temperature,
-          max_tokens: defaultParams.maxTokens,
+          temperature: params.temperature || defaultParams.temperature,
+          max_tokens: params.maxTokens || defaultParams.maxTokens,
         });
         return response.choices[0].message.content;
       } else {
+        console.log("Sending to MLC:", prompt);
         const response = await engine.completion({
           prompt,
-          temperature: defaultParams.temperature,
-          max_tokens: defaultParams.maxTokens,
+          temperature: params.temperature || defaultParams.temperature,
+          max_tokens: params.maxTokens || defaultParams.maxTokens,
         });
         return response.choices[0].text;
       }

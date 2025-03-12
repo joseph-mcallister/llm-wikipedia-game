@@ -53,7 +53,7 @@ export const MODELS: IModel[] = [
 ];
 
 export const actionToUserPrompt: { [key in ActionType]: string } = {
-  broader: "Respond with {n} broader topics that encompass \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: broader1, broader2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  broader: "Respond with {n} broader topics that are related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: broader1, broader2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
   deeper: "Respond with {n} more specific subtopics of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: subtopic1, subtopic2, subtopic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
   people: "Respond with {n} notable people closely associated with \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: person1, person2, person3, person4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
   places: "Respond with {n} significant places related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
@@ -99,51 +99,83 @@ interface GenerateResponseParams {
   neighboringTopics: string[];
   maxTopics: number;
   systemPromptOverride?: string;
-  actionToUserPromptOverride?: { [key in ActionType]: string };
+  actionPromptOverride?: { [key in ActionType]: string };
+  modelType: "chat" | "completion";
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  topK?: number;
+}
+
+
+const defaultParams = {
+  temperature: 0.7,
+  maxTokens: 20,
+  systemPromptOverride: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
+  actionToUserPromptOverride: actionToUserPrompt,
 }
 
 export const generateResponse = async (
   engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>>,
   params: GenerateResponseParams
 ) => {
-  const systemPrompt = params.systemPromptOverride || "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.";
-  let userPrompt = (params.actionToUserPromptOverride && params.actionToUserPromptOverride[params.actionType]) || actionToUserPrompt[params.actionType];
-  userPrompt = userPrompt.replace("{n}", params.maxTopics.toString()).replace("{topic}", params.nodeLabel).replace("{neighboringTopics}", params.neighboringTopics.join(", "));
+  const systemPrompt = params.systemPromptOverride || defaultParams.systemPromptOverride;
+  let prompt = (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
+  prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
 
   if (engine instanceof Wllama) {
-    const messages: WllamaChatMessage[] = [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      { role: "user", content: userPrompt },
-    ];
-    console.log("Sending to Wllama:", messages);
-    return await engine.createChatCompletion(messages, { 
-      sampling: {
-        temp: 0.7,
-      },
-    });
-  } else {
-    try {
-      const messages: (
-        | ChatCompletionSystemMessageParam
-        | ChatCompletionUserMessageParam
-      )[] = [
+    if (params.modelType === "chat") {
+      const messages: WllamaChatMessage[] = [
         {
           role: "system",
           content: systemPrompt,
         },
-        { role: "user", content: userPrompt },
+        { role: "user", content: prompt },
       ];
-      console.log("Sending to MLC:", messages);
-      const response = await engine.chat.completions.create({
-        messages,
-        temperature: 0.7,
-        max_tokens: 100,
+      console.log("Sending to Wllama:", messages);
+      return await engine.createChatCompletion(messages, { 
+        sampling: {
+          temp: defaultParams.temperature,
+        },
+        nPredict: defaultParams.maxTokens,
       });
-
-      return response.choices[0].message.content;
+    } else {
+      console.log("Sending to Wllama:", prompt);
+      return await engine.createCompletion(prompt, {
+        sampling: {
+          temp: defaultParams.temperature,
+        },
+        nPredict: defaultParams.maxTokens,
+      });
+    }
+  } else {
+    try {
+      if (params.modelType === "chat") {  
+        const messages: (
+            | ChatCompletionSystemMessageParam
+            | ChatCompletionUserMessageParam
+        )[] = [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          { role: "user", content: prompt },
+        ];
+        console.log("Sending to MLC:", messages);
+        const response = await engine.chat.completions.create({
+          messages,
+          temperature: defaultParams.temperature,
+          max_tokens: defaultParams.maxTokens,
+        });
+        return response.choices[0].message.content;
+      } else {
+        const response = await engine.completion({
+          prompt,
+          temperature: defaultParams.temperature,
+          max_tokens: defaultParams.maxTokens,
+        });
+        return response.choices[0].text;
+      }
     } catch (error) {
       console.error("WebLLM error:", error);
       throw error;

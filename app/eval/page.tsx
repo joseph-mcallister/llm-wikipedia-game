@@ -73,7 +73,7 @@ const callJudge = async (
 
 Rate the response from 0-10 where:
 0 = Does not respond in comma separate format or is completely wrong
-3 = Partially correct/relevant but repeats the prompt or has mistakes
+3 = Partially correct/relevant but repeats the prompt topic or has clear mistakes
 5 = Partially correct/relevant
 10 = Perfect response
 
@@ -87,6 +87,10 @@ Here are some examples:
 Given prompt: "Action: Broader, Topic: Apple"
 AI response: "Fruit, Company, NYC"
 Score:10
+
+Given prompt: "Action: Broader, Topic: Apple"
+AI response: "Apple, Company, Fruit"
+Score:3
 
 Given prompt: "Action: Deeper, Topic: War"
 AI response: "World War I, World War II, Korean War"
@@ -217,9 +221,10 @@ export default function EvalPage() {
             systemPromptOverride: usePromptOverrides
               ? systemPromptOverride
               : undefined,
-            actionToUserPromptOverride: usePromptOverrides
+            actionPromptOverride: usePromptOverrides
               ? actionToUserPromptOverride
               : undefined,
+            modelType: "chat",
           });
         } else if (selectedModel?.type === "wllama" && wllamaInstance) {
           modelOutput = await generateResponse(wllamaInstance, {
@@ -230,9 +235,10 @@ export default function EvalPage() {
             systemPromptOverride: usePromptOverrides
               ? systemPromptOverride
               : undefined,
-            actionToUserPromptOverride: usePromptOverrides
+            actionPromptOverride: usePromptOverrides
               ? actionToUserPromptOverride
               : undefined,
+            modelType: "completion",
           });
         } else {
           console.error("No valid engine available");

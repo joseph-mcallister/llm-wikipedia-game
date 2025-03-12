@@ -91,7 +91,8 @@ export default function WikipediaGameBoard() {
         actionType,
         nodeLabel: selectedNode.data.label,
         neighboringTopics,
-        maxTopics: 4
+        maxTopics: 4,
+        modelType: "chat"
       });
 
       if (!result) {

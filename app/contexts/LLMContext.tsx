@@ -11,13 +11,21 @@ interface LLMContextType {
   setWllamaInstance: (instance: Wllama | null) => void;
 }
 
-export const LLMContext = createContext<LLMContextType | undefined>(undefined);
+const LLMContext = createContext<LLMContextType | undefined>(undefined);
 
 export function LLMProvider({ children }: { children: ReactNode }) {
   const [engineInstance, setEngineInstance] = useState<Awaited<ReturnType<typeof CreateMLCEngine>> | null>(null);
   const [wllamaInstance, setWllamaInstance] = useState<Wllama | null>(null);
+
+  const value = {
+    engineInstance,
+    setEngineInstance,
+    wllamaInstance,
+    setWllamaInstance,
+  };
+
   return (
-    <LLMContext.Provider value={{ engineInstance, setEngineInstance, wllamaInstance, setWllamaInstance }}>
+    <LLMContext.Provider value={value}>
       {children}
     </LLMContext.Provider>
   );

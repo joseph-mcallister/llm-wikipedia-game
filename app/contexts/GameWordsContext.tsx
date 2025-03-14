@@ -17,7 +17,7 @@ const DAILY_WORDS: Record<string, [string, string]> = {
   '2025-03-17': ['Brazil', 'Wine'],
   '2025-03-20': ['Brazil', 'Futebol'],
   '2025-03-21': ['Dance', 'Grape'],
-  
+  '2025-03-22': ['Water bottle', 'Tennis'],
 };
 
 interface GameWordsContextType {

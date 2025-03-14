@@ -197,9 +197,9 @@ export default function EvalPage() {
       let modelOutput: string | undefined | null = undefined;
       
       if (selectedModel?.type === "mlc" && engineInstance) {
-        modelOutput = await generateResponse(engineInstance, formParams);
+        modelOutput = await generateResponse(engineInstance, formParams, true);
       } else if (selectedModel?.type === "wllama" && wllamaInstance) {
-        modelOutput = await generateResponse(wllamaInstance, formParams);
+        modelOutput = await generateResponse(wllamaInstance, formParams, true);
       }
       
       setSingleResponse(modelOutput || null);
@@ -270,9 +270,9 @@ export default function EvalPage() {
         };
 
         if (selectedModel?.type === "mlc" && engineInstance) {
-          modelOutput = await generateResponse(engineInstance, evalParams);
+          modelOutput = await generateResponse(engineInstance, evalParams, true);
         } else if (selectedModel?.type === "wllama" && wllamaInstance) {
-          modelOutput = await generateResponse(wllamaInstance, evalParams);
+          modelOutput = await generateResponse(wllamaInstance, evalParams, true);
         } else {
           console.error("No valid engine available");
           continue;

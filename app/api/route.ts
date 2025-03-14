@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ActionType } from "../constants/wikipediaGame";
 import { GenerateResponseParams, defaultParams } from "../utils/llm";
 import OpenAI from 'openai';
@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
             max_tokens: maxTokens || defaultParams.maxTokens,
         });
 
-        return Response.json({ 
+        return NextResponse.json({ 
             content: response.choices[0].message.content 
         });
     } catch (error) {
         console.error('OpenAI API error:', error);
-        return Response.json({ error: 'Failed to generate response' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 });
     }
 }

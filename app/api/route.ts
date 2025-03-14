@@ -7,7 +7,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const actionToUserPrompt: { [key in ActionType]: string } = {
+export const actionToUserPrompt: { [key in ActionType]: string } = {
     broader: "Respond with a comma-separated list of a few topics that are broader/more general than the {topic}.",
     deeper: "Respond with a comma-separated list of a few topics that are more specific/detailed than the {topic}.",
     similar: "Respond with a comma-separated list of a few topics that are similar to the {topic}.",

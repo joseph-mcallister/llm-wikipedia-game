@@ -563,6 +563,22 @@ export default function EvalPage() {
           Generate Single Response
         </button>
 
+        <div>
+          <label className="block mb-1">Override Test Case Actions (Optional)</label>
+          <select
+            value={selectedAction}
+            onChange={(e) => setSelectedAction(e.target.value as ActionType | "")}
+            className="w-full border rounded p-2 bg-black text-white"
+          >
+            <option value="">Use Original Actions</option>
+            {ACTIONS.map((action) => (
+              <option key={action.type} value={action.type}>
+                {action.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           onClick={handleRunEval}
           disabled={isEvalRunning || !isModelLoaded}

@@ -53,16 +53,16 @@ export const MODELS: IModel[] = [
 ];
 
 export const actionToUserPrompt: { [key in ActionType]: string } = {
-  broader: "Respond with {n} broader topics that are related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: broader1, broader2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
-  deeper: "Respond with {n} more specific subtopics of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: subtopic1, subtopic2, subtopic3. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
-  people: "Respond with {n} notable people closely associated with \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: person1, person2, person3, person4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
-  places: "Respond with {n} significant places related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
-  similar: "Respond with {n} closely related topics to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: topic1, topic2, topic3, topic4. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
-  opposite: "Respond with {n} conceptual opposites of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: opposite1, opposite2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
-  good: "Respond with {n} \"good\" (as in opposite of evil) things related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
-  evil: "Respond with {n} \"evil\" things related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: place1, place2, place3, place4. DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
-  future: "Respond with {n} future developments related to \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: future1, future2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
-  past: "Respond with {n} historical aspects of \"{topic}\", as a comma-separated list with no other text or punctuation. Example format: past1, past2. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  broader: "Respond with {n} broader topics that are related to \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  deeper: "Respond with {n} more specific subtopics of \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  people: "Respond with {n} notable people closely associated with \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
+  places: "Respond with {n} significant places related to \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
+  similar: "Respond with {n} closely related topics to \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  opposite: "Respond with {n} conceptual opposites of \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  good: "Respond with {n} \"good\" (as in opposite of evil) things related to \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
+  evil: "Respond with {n} \"evil\" things related to \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS.",
+  future: "Respond with {n} future developments related to \"{topic}\", as a comma-separated list with no other text or punctuation.  DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
+  past: "Respond with {n} historical aspects of \"{topic}\", as a comma-separated list with no other text or punctuation. DO NOT RESPOND WITH MORE THAN {n} TOPICS or include the topic itself.",
 }
 
 export const createWllamaInstance = async (model: IModel, progressCallback: ({loaded, total}: {loaded: number, total: number}) => void) => {
@@ -109,7 +109,7 @@ export interface GenerateResponseParams {
 
 export const defaultParams = {
   temperature: 0.7,
-  maxTokens: 20,
+  maxTokens: 15,
   systemPromptOverride: "You are an AI that ONLY responds with comma-separated values, with no other text or punctuation. Never include explanations or additional formatting.",
   actionToUserPromptOverride: actionToUserPrompt,
 }

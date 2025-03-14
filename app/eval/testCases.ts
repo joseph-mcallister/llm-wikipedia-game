@@ -7,14 +7,6 @@ export const testCases: TestCaseInput[] = [
     },
     {
       actionType: "broader",
-      node: "Artificial Intelligence",
-    },
-    {
-      actionType: "broader",
-      node: "History",
-    },
-    {
-      actionType: "deeper",
       node: "History",
     },
     {
@@ -35,7 +27,7 @@ export const testCases: TestCaseInput[] = [
     },
     {
       actionType: "evil",
-      node: "Good",
+      node: "men",
     },
     {
       actionType: "future",
@@ -65,5 +57,16 @@ export const testCases: TestCaseInput[] = [
       actionType: "opposite",
       node: "Republican",
     },
-    
+    {
+      actionType: "similar",
+      node: "Dancer",
+    },
+    {
+      actionType: "similar",
+      node: "Dancer",
+    },
+    {
+      actionType: "broader",
+      node: "mucus",
+    },
   ];

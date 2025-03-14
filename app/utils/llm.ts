@@ -117,15 +117,14 @@ export const defaultParams = {
 
 export const generateResponse = async (
   engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>> | "openai",
-  params: GenerateResponseParams,
-  isLocalLLMsEnabled: boolean
+  params: GenerateResponseParams
 ) => {
   const systemPrompt = params.systemPromptOverride || defaultParams.systemPromptOverride;
   let prompt = (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
   prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
 
   // If not using local LLMs, force OpenAI usage
-  if (!isLocalLLMsEnabled) {
+  if (!useLocalLLMs()) {
     engine = "openai";
   }
 

@@ -43,7 +43,6 @@ export default function WikipediaGameBoard() {
   const [hasWon, setHasWon] = useState(false);
   const [winningPath, setWinningPath] = useState<PathStep[]>([]);
   const [isMobile, setIsMobile] = useState(false);
-  const isLocalLLMsEnabled = useLocalLLMs();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -84,7 +83,7 @@ export default function WikipediaGameBoard() {
 
       const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges, actionType);
 
-      const engine = engineInstance || wllamaInstance || (!isLocalLLMsEnabled ? "openai" : null);
+      const engine = engineInstance || wllamaInstance || (!useLocalLLMs() ? "openai" : null);
       if (!engine) {
         throw new Error("LLM not initialized");
       }
@@ -198,14 +197,15 @@ export default function WikipediaGameBoard() {
     }
   };
 
-  const resetGame = useCallback(() => {
-    setNodes([]);
+  const handleReset = useCallback(() => {
+    // Reset to initial state
+    setNodes((nodes) => nodes.filter(node => !node.id.includes('-')));
     setEdges([]);
     setSelectedNode(null);
     setHasWon(false);
     setWinningPath([]);
     setError(null);
-  }, [setNodes, setEdges]);
+  }, []);
 
   return (
     <div>
@@ -288,7 +288,7 @@ export default function WikipediaGameBoard() {
 
       <div className="mt-4 text-center">
         <button
-          onClick={resetGame}
+          onClick={handleReset}
           className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
         >
           Start Over

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWebGPU } from "../contexts/WebGPUContext";
-import { InitProgressReport, CreateMLCEngine } from "@mlc-ai/web-llm";
+import { InitProgressReport } from "@mlc-ai/web-llm";
 import { useLLM } from "../contexts/LLMContext";
 import WebGPUStatus from "../components/WebGPUStatus";
 import { MODELS, createWllamaInstance, createMLCEngineInstance } from "../utils/llm";

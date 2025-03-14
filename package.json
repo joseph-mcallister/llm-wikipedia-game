@@ -14,7 +14,6 @@
     "@next/third-parties": "^15.2.1",
     "@wllama/wllama": "^2.2.1",
     "next": "^15.2.1",
-    "openai": "^4.87.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "reactflow": "^11.11.4"

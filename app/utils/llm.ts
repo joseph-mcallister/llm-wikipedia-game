@@ -8,14 +8,13 @@ import {
 import { Wllama, WllamaChatMessage } from '@wllama/wllama/esm/index.js';
 import WasmFromCDN from '@wllama/wllama/esm/wasm-from-cdn.js';
 import { ActionType } from "../constants/wikipediaGame";
-import { useLocalLLMs } from "../constants/environment";
 
 export interface IModel {
   id: string;
   name: string;
   downloadSize: string;
   filePath?: string;
-  type: "mlc" | "wllama" | "openai"
+  type: "mlc" | "wllama"
 }
 
 export const MODELS: IModel[] = [
@@ -116,43 +115,13 @@ export const defaultParams = {
 }
 
 export const generateResponse = async (
-  engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>> | "openai",
+  engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>>,
   params: GenerateResponseParams
 ) => {
   const systemPrompt = params.systemPromptOverride || defaultParams.systemPromptOverride;
   let prompt = (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
   prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
-
-  // If not using local LLMs, force OpenAI usage
-  if (!useLocalLLMs()) {
-    engine = "openai";
-  }
-
-  if (engine === "openai") {
-    try {
-      const response = await fetch("/api", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...params,
-          systemPromptOverride: systemPrompt,
-          actionPromptOverride: params.actionPromptOverride,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to get response from OpenAI");
-      }
-      
-      const data = await response.json();
-      return data.content;
-    } catch (error) {
-      console.error("OpenAI error:", error);
-      throw error;
-    }
-  } else if (engine instanceof Wllama) {
+  if (engine instanceof Wllama) {
     if (params.modelType === "chat") {
       const messages: WllamaChatMessage[] = [
         {

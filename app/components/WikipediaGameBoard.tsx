@@ -18,7 +18,6 @@ import {
 } from "../constants/wikipediaGame";
 import { generateResponse, parseResponse } from "../utils/llm";
 import "reactflow/dist/style.css";
-import { useLocalLLMs } from "../constants/environment";
 
 
 export default function WikipediaGameBoard() {
@@ -83,7 +82,7 @@ export default function WikipediaGameBoard() {
 
       const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges, actionType);
 
-      const engine = engineInstance || wllamaInstance || (!useLocalLLMs() ? "openai" : null);
+      const engine = engineInstance || wllamaInstance;
       if (!engine) {
         throw new Error("LLM not initialized");
       }

@@ -20,7 +20,17 @@ import {
 } from "./helpers";
 import { testCases } from "./testCases";
 import { ACTIONS, ActionType } from "../constants/wikipediaGame";
-import { isLocalhost } from "../constants/environment";
+
+
+const isLocalhost = () => {
+  if (typeof window !== "undefined") {
+    return (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    );
+  }
+  return false;
+};
 
 const callJudge = async (
   testCase: TestCaseWithResponse

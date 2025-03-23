@@ -9,7 +9,6 @@ const DAILY_WORDS: Record<string, [string, string]> = {
   '2025-03-09': ['USA', 'Elon Musk'],
   '2025-03-10': ['Bitcoin', 'China'],
   '2025-03-11': ['SpaceX', 'Italy'],
-
   '2025-03-16': ['Germany', 'Tennis'],
   '2025-03-17': ['Brazil', 'Wine'],
   '2025-03-20': ['Brazil', 'Futebol'],

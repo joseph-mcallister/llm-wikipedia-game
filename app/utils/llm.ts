@@ -34,8 +34,8 @@ export const MODELS: IModel[] = [
   {
     id: "jmcallister/llm-wikipedia-game-qwen-2.5-0.5b-v1",
     name: "Qwen-2.5-0.5 fine-tuned q4 v1 (recommended)",
-    filePath: "unsloth.Q4_K_M.gguf",
-    downloadSize: "398 MB",
+    filePath: "unsloth.Q8_0.gguf", // unsloth.Q4_K_M.gguf, unsloth.Q8_0.gguf
+    downloadSize: "531 MB",
     type: "wllama",
     chat: false,
     completionPrompt: customQwenCompletionPrompt,

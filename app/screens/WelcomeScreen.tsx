@@ -18,7 +18,7 @@ interface DownloadProgressReport {
 
 export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
   const { isSupported } = useWebGPU();
-  const { engineInstance, setEngineInstance, wllamaInstance, setWllamaInstance } =
+  const { engineInstance, setEngineInstance, wllamaInstance, setWllamaInstance, model, setModel } =
     useLLM();
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<DownloadProgressReport | null>(null);
@@ -50,6 +50,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
         };
         const wllamaInstance = await createWllamaInstance(selectedModel, progressCallback);
         setWllamaInstance(wllamaInstance);
+        setModel(selectedModel);
       } else if (selectedModel.type === "mlc") {
           const engine = await createMLCEngineInstance(selectedModel, (report: InitProgressReport) => {
           console.log("Model loading:", report);
@@ -60,6 +61,7 @@ export default function WelcomeScreen({ onGameStart }: WelcomeScreenProps) {
           setProgress(progressReport);
         });
         setEngineInstance(engine);
+        setModel(selectedModel);
       }
       onGameStart();
     } catch (err) {

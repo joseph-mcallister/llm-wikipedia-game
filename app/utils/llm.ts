@@ -15,40 +15,67 @@ export interface IModel {
   downloadSize: string;
   filePath?: string;
   type: "mlc" | "wllama"
+  chat: boolean
+  completionPrompt?: string;
 }
+const customQwenCompletionPrompt = `
+Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+List {action} topics related to the given topic
+
+### Input:
+{topic}
+
+### Response:
+`
 
 export const MODELS: IModel[] = [
+  {
+    id: "jmcallister/llm-wikipedia-game-qwen-2.5-0.5b-v1",
+    name: "Qwen-2.5-0.5 fine-tuned q4 v1 (recommended)",
+    filePath: "unsloth.Q4_K_M.gguf",
+    downloadSize: "398 MB",
+    type: "wllama",
+    chat: false,
+    completionPrompt: customQwenCompletionPrompt,
+  },
   {
     id: "Llama-3.2-1B-Instruct-q4f32_1-MLC",
     name: "Llama-3.2-1B (recommended, webgpu)",
     downloadSize: "650 MB",
-    type: "mlc"
+    type: "mlc",
+    chat: true,
   },
   {
     id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
     name: "Qwen-2.5-0.5B (fastest, webgpu)",
     downloadSize: "250 MB",
-    type: "mlc"
+    type: "mlc",
+    chat: true,
   },
   {
     id: "gemma-2-2b-it-q4f16_1-MLC",
     name: "Gemma-2-2B (largest, webgpu)",
     downloadSize: "1.4 GB",
-    type: "mlc"
+    type: "mlc",
+    chat: true,
   },
   {
     id: "hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF",
     name: "Llama-3.2-1B (recommended, wasm)",
     filePath: "llama-3.2-1b-instruct-q4_k_m.gguf",
     downloadSize: "800 MB",
-    type: "wllama"
+    type: "wllama",
+    chat: true,
   },
   {
     id: "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
     name: "Qwen-2.5-0.5B (fastest, wasm)",
     filePath: "qwen2.5-0.5b-instruct-q8_0.gguf",
     downloadSize: "650 MB",
-    type: "wllama"
+    type: "wllama",
+    chat: true,
   },
 ];
 
@@ -100,6 +127,7 @@ export interface GenerateResponseParams {
   maxTopics: number;
   systemPromptOverride?: string;
   actionPromptOverride?: { [key in ActionType]: string };
+  completionPromptOverride?: string;
   modelType: "chat" | "completion";
   temperature?: number;
   maxTokens?: number;
@@ -119,8 +147,8 @@ export const generateResponse = async (
   params: GenerateResponseParams
 ) => {
   const systemPrompt = params.systemPromptOverride || defaultParams.systemPromptOverride;
-  let prompt = (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
-  prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
+  let prompt = params.completionPromptOverride || (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
+  prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{action}", params.actionType).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
   if (engine instanceof Wllama) {
     if (params.modelType === "chat") {
       const messages: WllamaChatMessage[] = [

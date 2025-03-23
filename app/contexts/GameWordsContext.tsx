@@ -9,15 +9,22 @@ const DAILY_WORDS: Record<string, [string, string]> = {
   '2025-03-09': ['USA', 'Elon Musk'],
   '2025-03-10': ['Bitcoin', 'China'],
   '2025-03-11': ['SpaceX', 'Italy'],
-  '2025-03-12': ['Tesla', 'Hollywood'],
-  '2025-03-13': ['Dinosaur', 'Oil'],
-  '2025-03-14': ['Elephant', 'Steve Jobs'],
-  '2025-03-15': ['Soccer', 'China'],
+
   '2025-03-16': ['Germany', 'Tennis'],
   '2025-03-17': ['Brazil', 'Wine'],
   '2025-03-20': ['Brazil', 'Futebol'],
   '2025-03-21': ['Dance', 'Grape'],
-  
+  '2025-03-22': ['France', 'Wine'],
+  '2025-03-23': ['Italy', 'Soccer'],
+  '2025-03-24': ['Germany', 'Tennis'],
+  '2025-03-25': ['Brazil', 'Monkey'],
+  '2025-03-26': ['Dance', 'Grape'],
+  '2025-03-27': ['France', 'Soda'],
+  '2025-03-28': ['Italy', 'Soccer'],
+  '2025-03-29': ['Tesla', 'Hollywood'],
+  '2025-03-30': ['Dinosaur', 'Oil'],
+  '2025-03-31': ['Elephant', 'Steve Jobs'],
+  '2025-04-01': ['Soccer', 'China'],
 };
 
 interface GameWordsContextType {

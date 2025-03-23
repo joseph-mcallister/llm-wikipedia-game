@@ -22,7 +22,7 @@ import "reactflow/dist/style.css";
 
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
-  const { engineInstance, wllamaInstance } = useLLM();
+  const { engineInstance, wllamaInstance, model } = useLLM();
   const { 
     nodes, 
     edges, 
@@ -92,7 +92,8 @@ export default function WikipediaGameBoard() {
         nodeLabel: selectedNode.data.label,
         neighboringTopics,
         maxTopics: 4,
-        modelType: "chat"
+        modelType: model.chat ? "chat" : "completion",
+        completionPromptOverride: model.completionPrompt,
       });
 
       if (!result) {

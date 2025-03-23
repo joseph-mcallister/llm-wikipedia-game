@@ -206,7 +206,7 @@ export default function EvalPage() {
 
     try {
       let modelOutput: string | undefined | null = undefined;
-      
+
       if (selectedModel?.type === "mlc" && engineInstance) {
         modelOutput = await generateResponse(engineInstance, formParams);
       } else if (selectedModel?.type === "wllama" && wllamaInstance) {
@@ -278,8 +278,9 @@ export default function EvalPage() {
           ...formParams,
           actionType: actionType as ActionType,
           nodeLabel: testCase.node,
+          completionPromptOverride: selectedModel.completionPrompt,
+          modelType: selectedModel.chat ? "chat" : "completion",
         };
-
         if (selectedModel?.type === "mlc" && engineInstance) {
           modelOutput = await generateResponse(engineInstance, evalParams);
         } else if (selectedModel?.type === "wllama" && wllamaInstance) {

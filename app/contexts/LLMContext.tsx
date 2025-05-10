@@ -6,6 +6,8 @@ import { Wllama } from '@wllama/wllama/esm/index.js';
 import { IModel, MODELS } from '../utils/llm';
 
 interface LLMContextType {
+  useLocalLLM: boolean;
+  setUseLocalLLM: (useLocalLLM: boolean) => void;
   engineInstance: Awaited<ReturnType<typeof CreateMLCEngine>> | null;
   setEngineInstance: (engine: Awaited<ReturnType<typeof CreateMLCEngine>> | null) => void;
   wllamaInstance: Wllama | null;
@@ -20,8 +22,9 @@ export function LLMProvider({ children }: { children: ReactNode }) {
   const [engineInstance, setEngineInstance] = useState<Awaited<ReturnType<typeof CreateMLCEngine>> | null>(null);
   const [wllamaInstance, setWllamaInstance] = useState<Wllama | null>(null);
   const [model, setModel] = useState<IModel>(MODELS[0]);
+  const [useLocalLLM, setUseLocalLLM] = useState(false);
   return (
-    <LLMContext.Provider value={{ engineInstance, setEngineInstance, wllamaInstance, setWllamaInstance, model, setModel }}>
+    <LLMContext.Provider value={{ engineInstance, setEngineInstance, wllamaInstance, setWllamaInstance, model, setModel, useLocalLLM, setUseLocalLLM }}>
       {children}
     </LLMContext.Provider>
   );

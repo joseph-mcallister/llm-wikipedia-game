@@ -22,7 +22,7 @@ import "reactflow/dist/style.css";
 
 export default function WikipediaGameBoard() {
   const { startWord, endWord } = useGameWords();
-  const { engineInstance, wllamaInstance, model } = useLLM();
+  const { useLocalLLM, engineInstance, wllamaInstance, model } = useLLM();
   const { 
     nodes, 
     edges, 
@@ -82,7 +82,7 @@ export default function WikipediaGameBoard() {
 
       const neighboringTopics = getNeighboringTopics(selectedNode.id, nodes, edges, actionType);
 
-      const engine = engineInstance || wllamaInstance;
+      const engine = useLocalLLM ? (engineInstance || wllamaInstance) : 'remote';
       if (!engine) {
         throw new Error("LLM not initialized");
       }

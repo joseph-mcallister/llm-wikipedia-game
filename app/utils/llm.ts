@@ -143,12 +143,36 @@ export const defaultParams = {
 }
 
 export const generateResponse = async (
-  engine: Wllama | Awaited<ReturnType<typeof CreateMLCEngine>>,
+  engine: 'remote' | Wllama | Awaited<ReturnType<typeof CreateMLCEngine>>,
   params: GenerateResponseParams
 ) => {
+  if (engine === 'remote') {
+    const response = await fetch('/api/get_nodes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        actionType: params.actionType,
+        nodeLabel: params.nodeLabel,
+        neighboringTopics: params.neighboringTopics,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+
+    const newTopics = await response.json();
+    console.log(newTopics.prompt);
+    return newTopics.completion;
+  }
+
   const systemPrompt = params.systemPromptOverride || defaultParams.systemPromptOverride;
   let prompt = params.completionPromptOverride || (params.actionPromptOverride && params.actionPromptOverride[params.actionType]) || defaultParams.actionToUserPromptOverride[params.actionType];
   prompt = prompt.replaceAll("{n}", params.maxTopics.toString()).replaceAll("{topic}", params.nodeLabel).replaceAll("{action}", params.actionType).replaceAll("{neighboringTopics}", params.neighboringTopics.join(", "));
+  prompt = prompt.substring(0, Math.min(prompt.length, 1000)); // avoid bad actor sending huge prompts
   if (engine instanceof Wllama) {
     if (params.modelType === "chat") {
       const messages: WllamaChatMessage[] = [

@@ -125,6 +125,7 @@ export interface GenerateResponseParams {
   nodeLabel: string;
   neighboringTopics: string[];
   maxTopics: number;
+  targetNodeLabel: string;
   systemPromptOverride?: string;
   actionPromptOverride?: { [key in ActionType]: string };
   completionPromptOverride?: string;
@@ -147,7 +148,7 @@ export const generateResponse = async (
   params: GenerateResponseParams
 ) => {
   if (engine === 'remote') {
-    const response = await fetch('/api/get_nodes', {
+    const response = await fetch('/api/get_nodes/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,6 +157,7 @@ export const generateResponse = async (
         actionType: params.actionType,
         nodeLabel: params.nodeLabel,
         neighboringTopics: params.neighboringTopics,
+        targetNodeLabel: params.targetNodeLabel,
       }),
     });
 

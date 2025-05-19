@@ -90,6 +90,7 @@ export default function WikipediaGameBoard() {
       const result = await generateResponse(engine, {
         actionType,
         nodeLabel: selectedNode.data.label,
+        targetNodeLabel: endWord,
         neighboringTopics,
         maxTopics: 4,
         modelType: model.chat ? "chat" : "completion",
@@ -117,11 +118,17 @@ export default function WikipediaGameBoard() {
       setNodes((nodes) =>
         nodes.map((node) => ({
           ...node,
-          data: { ...node.data, isBold: false, borderColor: undefined },
+          data: { 
+            ...node.data, 
+            isBold: false, 
+            borderColor: undefined,
+            isEnd: node.data.label.toLowerCase() === endWord.toLowerCase()
+          },
           style: { 
             fontWeight: "normal", 
             border: 'none',
             ...(node.data.label.toLowerCase() === startWord.toLowerCase() && { background: 'rgb(34 211 238)' }),
+            ...(node.data.label.toLowerCase() === endWord.toLowerCase() && { background: 'rgb(244 114 182)' }),
           },
         }))
       );

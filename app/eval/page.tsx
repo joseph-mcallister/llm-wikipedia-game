@@ -144,6 +144,7 @@ export default function EvalPage() {
   const [formParams, setFormParams] = useState<GenerateResponseParams>({
     actionType: ACTIONS[0].type,
     nodeLabel: "",
+    targetNodeLabel: "",
     neighboringTopics: [],
     maxTopics: 4,
     systemPromptOverride: defaultParams.systemPromptOverride,

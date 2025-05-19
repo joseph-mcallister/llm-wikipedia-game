@@ -128,7 +128,7 @@ export default function WikipediaGameBoard() {
             fontWeight: "normal", 
             border: 'none',
             ...(node.data.label.toLowerCase() === startWord.toLowerCase() && { background: 'rgb(34 211 238)' }),
-            ...(node.data.label.toLowerCase() === endWord.toLowerCase() && { background: 'rgb(244 114 182)' }),
+            ...(node.data.label.toLowerCase().includes(endWord.toLowerCase()) && { background: 'rgb(244 114 182)' }),
           },
         }))
       );

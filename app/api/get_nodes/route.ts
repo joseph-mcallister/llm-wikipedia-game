@@ -46,7 +46,8 @@ Do not include descriptions or adjectives. Focus on specific, named entities or 
 `.trim();
     prompt = prompt.substring(0, Math.min(2000, prompt.length));
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1",
+      model: "gpt-5-nano",
+      reasoning_effort: "minimal",
       messages: [
         {
           role: "system",
@@ -64,8 +65,7 @@ Return exactly three titles in a comma-separated list. Do not include explanatio
           content: prompt
         }
       ],
-      temperature: 0.8,
-      max_tokens: 15
+      max_completion_tokens: 1000
     });
 
     const response = completion.choices[0].message.content;

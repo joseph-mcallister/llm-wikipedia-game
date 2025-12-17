@@ -50,8 +50,12 @@ Do not include descriptions or adjectives. Focus on specific, named entities or 
 The eventual target article the user is trying to reach is "${targetNodeLabel}".
 `.trim();
     prompt = prompt.substring(0, Math.min(2000, prompt.length));
+    console.log('=== PROMPT ===');
+    console.log(prompt);
+
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-5-nano",
+      reasoning_effort: "minimal",
       messages: [
         {
           role: "system",
@@ -69,11 +73,15 @@ Return 3 titles in a comma-separated list. Do not include explanations or extra 
           content: prompt
         }
       ],
-      temperature: 0.8,
-      max_tokens: 150
+      max_completion_tokens: 1000
     });
 
+    console.log('=== FULL COMPLETION ===');
+    console.log(JSON.stringify(completion, null, 2));
+
     const responses = completion.choices[0].message.content
+    console.log('=== EXTRACTED CONTENT ===');
+    console.log(responses);
 
     return NextResponse.json({ 
       completion: responses,

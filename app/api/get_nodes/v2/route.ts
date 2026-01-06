@@ -47,11 +47,8 @@ ${actionTypePrompts[actionType].replace("{nodeLabel}", `"${nodeLabel}"`)}.
 ${INCLUDE_NEIGHBORING_TOPICS ? `Avoid repeating these previously generated topics: ${neighboringTopics.join(", ")}.` : ''}
 Return exactly three distinct Wikipedia-style article titles that are nouns, formatted as a comma-separated list with no extra text.
 Do not include descriptions or adjectives. Focus on specific, named entities or concrete noun concepts only.
-The eventual target article the user is trying to reach is "${targetNodeLabel}".
 `.trim();
     prompt = prompt.substring(0, Math.min(2000, prompt.length));
-    console.log('=== PROMPT ===');
-    console.log(prompt);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-5-nano",
@@ -76,12 +73,7 @@ Return 3 titles in a comma-separated list. Do not include explanations or extra 
       max_completion_tokens: 1000
     });
 
-    console.log('=== FULL COMPLETION ===');
-    console.log(JSON.stringify(completion, null, 2));
-
-    const responses = completion.choices[0].message.content
-    console.log('=== EXTRACTED CONTENT ===');
-    console.log(responses);
+    const responses = completion.choices[0].message.content;
 
     return NextResponse.json({ 
       completion: responses,

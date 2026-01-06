@@ -5,6 +5,7 @@ import { WebGPUProvider } from "./contexts/WebGPUContext";
 import { LLMProvider } from "./contexts/LLMContext";
 import { GameWordsProvider } from "./contexts/GameWordsContext";
 import { GoogleTagManager } from '@next/third-parties/google'
+import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react";
 
 
@@ -53,6 +54,7 @@ export default function RootLayout({
             </LLMProvider>
           </WebGPUProvider>
           </Suspense>
+        <Analytics />
       </body>
     </html>
   );
